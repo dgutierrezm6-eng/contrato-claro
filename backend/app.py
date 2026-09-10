@@ -1,4 +1,10 @@
 import os
+# Obtener la URL de la base de datos desde Render
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+# Si viene en formato postgres://, ajustarla a postgresql:// para SQLAlchemy/Psycopg2
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 import sqlite3
 from flask import Flask, request, jsonify
 from flask_cors import CORS

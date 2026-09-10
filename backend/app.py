@@ -1,66 +1,119 @@
 import os
-# Obtener la URL de la base de datos desde Render
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
-# Si viene en formato postgres://, ajustarla a postgresql:// para SQLAlchemy/Psycopg2
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 import sqlite3
+from datetime import datetime, timedelta
+from functools import wraps
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import bcrypt
 import jwt
-from datetime import datetime, timedelta
-from functools import wraps
+
+# Intentar importar psycopg2 para PostgreSQL (Supabase)
+try:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    PSYCOPG2_AVAILABLE = True
+except ImportError:
+    PSYCOPG2_AVAILABLE = False
 
 app = Flask(__name__)
 # Permitir peticiones CORS desde cualquier origen (Vercel)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
+# Configuración de base de datos
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 JWT_SECRET = os.environ.get('JWT_SECRET', 'clave_secreta_contrato_claro_2026')
 DB_PATH = os.environ.get('DB_PATH', 'database.db')
 
+IS_POSTGRES = bool(DATABASE_URL and PSYCOPG2_AVAILABLE)
+IntegrityErrors = (sqlite3.IntegrityError, psycopg2.IntegrityError) if PSYCOPG2_AVAILABLE else sqlite3.IntegrityError
+
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if IS_POSTGRES:
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        return conn
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+def execute_query(cursor, query, params=()):
+    if IS_POSTGRES:
+        query = query.replace('?', '%s')
+    cursor.execute(query, params)
 
 def init_db():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            correo TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            rol TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS contratos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            usuario_id INTEGER NOT NULL,
-            tipo TEXT,
-            titulo TEXT,
-            cliente_nombre TEXT,
-            cliente_identificacion TEXT,
-            freelancer_nombre TEXT,
-            freelancer_identificacion TEXT,
-            objeto TEXT,
-            valor REAL,
-            forma_pago TEXT,
-            fecha_inicio TEXT,
-            fecha_fin TEXT,
-            clausula_alcance INTEGER,
-            clausula_pi INTEGER,
-            clausula_confidencialidad INTEGER,
-            texto_contrato TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-        )
-    ''')
+    if IS_POSTGRES:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id SERIAL PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                correo TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                rol TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS contratos (
+                id SERIAL PRIMARY KEY,
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+                tipo TEXT,
+                titulo TEXT,
+                cliente_nombre TEXT,
+                cliente_identificacion TEXT,
+                freelancer_nombre TEXT,
+                freelancer_identificacion TEXT,
+                objeto TEXT,
+                valor REAL,
+                forma_pago TEXT,
+                fecha_inicio TEXT,
+                fecha_fin TEXT,
+                clausula_alcance INTEGER,
+                clausula_pi INTEGER,
+                clausula_confidencialidad INTEGER,
+                texto_contrato TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        ''')
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                correo TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                rol TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS contratos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario_id INTEGER NOT NULL,
+                tipo TEXT,
+                titulo TEXT,
+                cliente_nombre TEXT,
+                cliente_identificacion TEXT,
+                freelancer_nombre TEXT,
+                freelancer_identificacion TEXT,
+                objeto TEXT,
+                valor REAL,
+                forma_pago TEXT,
+                fecha_inicio TEXT,
+                fecha_fin TEXT,
+                clausula_alcance INTEGER,
+                clausula_pi INTEGER,
+                clausula_confidencialidad INTEGER,
+                texto_contrato TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+            )
+        ''')
     conn.commit()
     conn.close()
 
@@ -98,13 +151,20 @@ def register():
     conn = get_db()
     cursor = conn.cursor()
     try:
-        cursor.execute(
-            'INSERT INTO usuarios (nombre, correo, password, rol) VALUES (?, ?, ?, ?)',
-            (nombre, correo, hashed, rol)
-        )
+        if IS_POSTGRES:
+            cursor.execute(
+                'INSERT INTO usuarios (nombre, correo, password, rol) VALUES (%s, %s, %s, %s) RETURNING id',
+                (nombre, correo, hashed, rol)
+            )
+            user_id = cursor.fetchone()['id']
+        else:
+            cursor.execute(
+                'INSERT INTO usuarios (nombre, correo, password, rol) VALUES (?, ?, ?, ?)',
+                (nombre, correo, hashed, rol)
+            )
+            user_id = cursor.lastrowid
         conn.commit()
-        user_id = cursor.lastrowid
-    except sqlite3.IntegrityError:
+    except IntegrityErrors:
         conn.close()
         return jsonify({'error': 'Este correo ya está registrado.'}), 400
 
@@ -125,7 +185,7 @@ def login():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM usuarios WHERE correo = ?', (correo,))
+    execute_query(cursor, 'SELECT * FROM usuarios WHERE correo = ?', (correo,))
     user = cursor.fetchone()
     conn.close()
 
@@ -148,7 +208,7 @@ def login():
 def get_contracts():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM contratos WHERE usuario_id = ? ORDER BY id DESC', (request.usuario['id'],))
+    execute_query(cursor, 'SELECT * FROM contratos WHERE usuario_id = ? ORDER BY id DESC', (request.usuario['id'],))
     rows = cursor.fetchall()
     conn.close()
     return jsonify({'contratos': [dict(r) for r in rows]})
@@ -158,7 +218,7 @@ def get_contracts():
 def get_contract(contract_id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM contratos WHERE id = ? AND usuario_id = ?', (contract_id, request.usuario['id']))
+    execute_query(cursor, 'SELECT * FROM contratos WHERE id = ? AND usuario_id = ?', (contract_id, request.usuario['id']))
     row = cursor.fetchone()
     conn.close()
     if not row:
@@ -171,13 +231,22 @@ def create_contract():
     b = request.get_json() or {}
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('''
+    
+    query_pg = '''
+        INSERT INTO contratos (
+            usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion,
+            freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago,
+            fecha_inicio, fecha_fin, clausula_alcance, clausula_pi, clausula_confidencialidad, texto_contrato
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+    '''
+    query_sqlite = '''
         INSERT INTO contratos (
             usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion,
             freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago,
             fecha_inicio, fecha_fin, clausula_alcance, clausula_pi, clausula_confidencialidad, texto_contrato
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
+    '''
+    params = (
         request.usuario['id'],
         b.get('tipo'),
         b.get('titulo'),
@@ -194,9 +263,16 @@ def create_contract():
         1 if b.get('clausulaPI') else 0,
         1 if b.get('clausulaConfidencialidad') else 0,
         b.get('textoContrato')
-    ))
+    )
+    
+    if IS_POSTGRES:
+        cursor.execute(query_pg, params)
+        new_id = cursor.fetchone()['id']
+    else:
+        cursor.execute(query_sqlite, params)
+        new_id = cursor.lastrowid
+        
     conn.commit()
-    new_id = cursor.lastrowid
     conn.close()
     return jsonify({'success': True, 'id': new_id})
 
@@ -205,7 +281,7 @@ def create_contract():
 def delete_contract(contract_id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM contratos WHERE id = ? AND usuario_id = ?', (contract_id, request.usuario['id']))
+    execute_query(cursor, 'DELETE FROM contratos WHERE id = ? AND usuario_id = ?', (contract_id, request.usuario['id']))
     conn.commit()
     deleted = cursor.rowcount
     conn.close()

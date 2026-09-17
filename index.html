@@ -204,11 +204,14 @@ const names = {
 };
 let contratosCache = [];
 
-function $(id){ return document.getElementById(id) }
-function money(x){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(x||0) }
+function $(id){ return document.getElementById(id); }
+function money(x){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(x||0); }
 
-function getToken(){ return localStorage.getItem('ccToken') }
-function getUsuario(){ try { return JSON.parse(localStorage.getItem('ccUsuario') || 'null') } catch { return null } }
+function getToken(){ return localStorage.getItem('ccToken'); }
+function getUsuario(){ 
+  try { return JSON.parse(localStorage.getItem('ccUsuario') || 'null'); } 
+  catch(e) { return null; } 
+}
 
 function setSesion(token, usuario){
   localStorage.setItem('ccToken', token);
@@ -222,8 +225,10 @@ function limpiarSesion(){
 
 function switchAuthTab(tab){
   $('tabLoginBtn').classList.toggle('active', tab === 'login');
-  $('tabRegisterBtn').classList.toggle('active', tab === 'register');$('loginForm').classList.toggle('active', tab === 'login');
-  $('registerForm').classList.toggle('active', tab === 'register');$('authError').style.display = 'none';
+  $('tabRegisterBtn').classList.toggle('active', tab === 'register');
+  $('loginForm').classList.toggle('active', tab === 'login');
+  $('registerForm').classList.toggle('active', tab === 'register');
+  $('authError').style.display = 'none';
 }
 
 function mostrarErrorAuth(msg){
@@ -237,10 +242,10 @@ async function handleLogin(ev){
   const correo = $('loginCorreo').value.trim();
   const password = $('loginPassword').value;
   try {
-    const resp = await fetch(`${API_BASE}/auth/login`, {
+    const resp = await fetch(API_BASE + '/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo, password }),
+      body: JSON.stringify({ correo, password })
     });
     const data = await resp.json();
     if (!resp.ok) { mostrarErrorAuth(data.error || 'No se pudo iniciar sesión.'); return false; }
@@ -260,10 +265,10 @@ async function handleRegister(ev){
   const password = $('regPassword').value;
   const rol = $('regRol').value;
   try {
-    const resp = await fetch(`${API_BASE}/auth/register`, {
+    const resp = await fetch(API_BASE + '/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, identificacion, correo, password, rol }),
+      body: JSON.stringify({ nombre, identificacion, correo, password, rol })
     });
     const data = await resp.json();
     if (!resp.ok) { mostrarErrorAuth(data.error || 'No se pudo crear la cuenta.'); return false; }
@@ -284,28 +289,34 @@ function handleLogout(){
 
 function entrarApp(){
   const usuario = getUsuario();
-  $('authScreen').style.display = 'none';$('appRoot').hidden = false;
-  $('avatarBtn').textContent = (usuario?.nombre \vert{}\vert{} '??').split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();$('connBadge').textContent = `● Sesión: ${usuario?.nombre || ''} (${usuario?.rol || 'Usuario'})`;
+  const nombre = (usuario && usuario.nombre) ? usuario.nombre : 'Usuario';
+  const rol = (usuario && usuario.rol) ? usuario.rol : 'Usuario';
+  
+  $('authScreen').style.display = 'none';
+  $('appRoot').hidden = false;
+  $('avatarBtn').textContent = nombre.split(' ').map(function(p){ return p[0]; }).slice(0,2).join('').toUpperCase();
+  $('connBadge').textContent = '● Sesión: ' + nombre + ' (' + rol + ')';
   showView('inicio');
 }
 
-async function apiFetch(path, opts = {}){
+async function apiFetch(path, opts){
+  opts = opts || {};
   const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
   const token = getToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token) headers.Authorization = 'Bearer ' + token;
 
-  const resp = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+  const resp = await fetch(API_BASE + path, Object.assign({}, opts, { headers: headers }));
 
   if (resp.status === 401) {
     handleLogout();
     throw new Error('Sesión expirada. Inicia sesión de nuevo.');
   }
-  const data = await resp.json().catch(() => ({}));
+  const data = await resp.json().catch(function(){ return {}; });
   if (!resp.ok) throw new Error(data.error || 'Error inesperado del servidor.');
   return data;
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', function(){
   if (getToken() && getUsuario()) {
     entrarApp();
   }
@@ -313,21 +324,31 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function showView(id){
-  document.querySelectorAll('.view').forEach(v => v.hidden = true);
+  document.querySelectorAll('.view').forEach(function(v){ v.hidden = true; });
   $(id).hidden = false;
-  document.querySelectorAll('nav button[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === id));
+  document.querySelectorAll('nav button[data-view]').forEach(function(b){
+    b.classList.toggle('active', b.dataset.view === id);
+  });
   if (id === 'contratos') renderContracts();
   if (id === 'calculadora') calc();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function start(t){ type = t; $('formTitle').textContent = names[t]; showView('crear') }
-function value(id){ return $(id).value.trim() }
-function checked(id){ return $(id).checked }
+function start(t){ type = t; $('formTitle').textContent = names[t]; showView('crear'); }
+function value(id){ return $(id).value.trim(); }
+function checked(id){ return $(id).checked; }
 
-function contractText(savedContract = null){
+function contractText(savedContract){
   if (savedContract) {
-    return `${(savedContract.titulo || names[savedContract.tipo] || 'CONTRATO').toUpperCase()}\n\nESTADO EN SISTEMA: ${(savedContract.estado || 'borrador').toUpperCase()}\nROL EN CONTRATO: ${(savedContract.rol_en_contrato || '').toUpperCase()}\n\n1. OBJETO Y ALCANCE\n${savedContract.objeto || 'Sin detalle de objeto registrado.'}\n\n2. PLAZO\nDesde: ${savedContract.fecha_inicio || 'No definida'} hasta: ${savedContract.fecha_fin || 'No definida'}.\n\n3. HONORARIOS Y PAGO\nValor total: ${money(savedContract.valor)}\nForma de pago: ${savedContract.forma_pago || 'No especificada'}.\n\n4. AUTONOMÍA Y REGISTRO RELACIONAL\nEste acuerdo cuenta con trazabilidad en la arquitectura relacional (4NF) bajo el registro ID #${savedContract.id}.\n\nFecha de registro: ${new Date(savedContract.created_at).toLocaleDateString('es-CO')}`;
+    return (savedContract.titulo || names[savedContract.tipo] || 'CONTRATO').toUpperCase() +
+      '\n\nESTADO EN SISTEMA: ' + (savedContract.estado || 'borrador').toUpperCase() +
+      '\nROL EN CONTRATO: ' + (savedContract.rol_en_contrato || '').toUpperCase() +
+      '\n\n1. OBJETO Y ALCANCE\n' + (savedContract.objeto || 'Sin detalle de objeto registrado.') +
+      '\n\n2. PLAZO\nDesde: ' + (savedContract.fecha_inicio || 'No definida') + ' hasta: ' + (savedContract.fecha_fin || 'No definida') + '.' +
+      '\n\n3. HONORARIOS Y PAGO\nValor total: ' + money(savedContract.valor) +
+      '\nForma de pago: ' + (savedContract.forma_pago || 'No especificada') + '.' +
+      '\n\n4. AUTONOMÍA Y REGISTRO RELACIONAL\nEste acuerdo cuenta con trazabilidad en la arquitectura relacional (4NF) bajo el registro ID #' + savedContract.id + '.' +
+      '\n\nFecha de registro: ' + new Date(savedContract.created_at).toLocaleDateString('es-CO');
   }
 
   let clauses = [];
@@ -335,7 +356,11 @@ function contractText(savedContract = null){
   if (checked('cPI')) clauses.push('PROPIEDAD INTELECTUAL: La cesión o licencia de los entregables, según lo acordado por las partes, se hará efectiva una vez se haya recibido el pago total de los honorarios.');
   if (checked('cConf')) clauses.push('CONFIDENCIALIDAD: Las partes se obligan a no divulgar la información confidencial recibida con ocasión de este acuerdo, salvo autorización escrita o exigencia legal.');
   
-  return `${names[type].toUpperCase()}\n\nEntre ${value('cliente') || '[CONTRATANTE]'}, identificado(a) con ${value('idCliente') || '[IDENTIFICACIÓN]'}, en adelante EL CONTRATANTE, y ${value('freelancer') || '[CONTRATISTA]'}, identificado(a) con ${value('idFreelancer') || '[IDENTIFICACIÓN]'}, en adelante EL CONTRATISTA, se celebra el presente contrato:\n\n1. OBJETO Y ALCANCE\nEL CONTRATISTA ejecutará con autonomía técnica y administrativa el siguiente servicio: ${value('objeto') || '[DESCRIBIR EL ALCANCE Y LOS ENTREGABLES]'}.\n\n2. PLAZO\nEl servicio iniciará el ${value('inicioFecha') || '[FECHA DE INICIO]'} y finalizará el ${value('finFecha') || '[FECHA DE FINALIZACIÓN]'}, salvo modificación acordada por escrito.\n\n3. HONORARIOS Y PAGO\nEL CONTRATANTE pagará a EL CONTRATISTA la suma total de ${money(Number(value('valor')))}. Forma de pago: ${value('pago')}.\n\n4. AUTONOMÍA\nEL CONTRATISTA prestará el servicio por sus propios medios y con autonomía técnica y administrativa.\n\n${clauses.map((c,i) => `${5+i}.${c}`).join('\n\n')}\n\nLas partes declaran haber leído y aceptado el contenido de este borrador.\n\nCONTRATANTE: __________________________\nCONTRATISTA: __________________________\nFecha: ${new Date().toLocaleDateString('es-CO')}`;
+  let result = names[type].toUpperCase() + '\n\nEntre ' + (value('cliente') || '[CONTRATANTE]') + ', identificado(a) con ' + (value('idCliente') || '[IDENTIFICACIÓN]') + ', en adelante EL CONTRATANTE, y ' + (value('freelancer') || '[CONTRATISTA]') + ', identificado(a) con ' + (value('idFreelancer') || '[IDENTIFICACIÓN]') + ', en adelante EL CONTRATISTA, se celebra el presente contrato:\n\n1. OBJETO Y ALCANCE\nEL CONTRATISTA ejecutará con autonomía técnica y administrativa el siguiente servicio: ' + (value('objeto') || '[DESCRIBIR EL ALCANCE Y LOS ENTREGABLES]') + '.\n\n2. PLAZO\nEl servicio iniciará el ' + (value('inicioFecha') || '[FECHA DE INICIO]') + ' y finalizará el ' + (value('finFecha') || '[FECHA DE FINALIZACIÓN]') + ', salvo modificación acordada por escrito.\n\n3. HONORARIOS Y PAGO\nEL CONTRATANTE pagará a EL CONTRATISTA la suma total de ' + money(Number(value('valor'))) + '. Forma de pago: ' + value('pago') + '.\n\n4. AUTONOMÍA\nEL CONTRATISTA prestará el servicio por sus propios medios y con autonomía técnica y administrativa.\n\n';
+  
+  clauses.forEach(function(c, i){ result += (5 + i) + '. ' + c + '\n\n'; });
+  result += 'Las partes declaran haber leído y aceptado el contenido de este borrador.\n\nCONTRATANTE: __________________________\nCONTRATISTA: __________________________\nFecha: ' + new Date().toLocaleDateString('es-CO');
+  return result;
 }
 
 function previewContract(){
@@ -343,10 +368,11 @@ function previewContract(){
     toast('Completa contratante, freelancer, alcance y valor para continuar.');
     return;
   }
-  $('preview').textContent = contractText();$('modal').classList.add('open');
+  $('preview').textContent = contractText();
+  $('modal').classList.add('open');
 }
 
-function closeModal(){ $('modal').classList.remove('open') }
+function closeModal(){ $('modal').classList.remove('open'); }
 
 async function saveContract(){
   try {
@@ -391,26 +417,31 @@ async function renderContracts(){
     const data = await apiFetch('/contracts');
     contratosCache = data.contratos || [];
     if (contratosCache.length === 0) {
-      cont.innerHTML = `<div class="empty"><h3>Aún no tienes contratos</h3><p>Crea tu primer contrato y guárdalo en tu cuenta.</p><button class="primary" onclick="start('prestacion')">Crear contrato</button></div>`;
+      cont.innerHTML = '<div class="empty"><h3>Aún no tienes contratos</h3><p>Crea tu primer contrato y guárdalo en tu cuenta.</p><button class="primary" onclick="start(\'prestacion\')">Crear contrato</button></div>';
       return;
     }
-    cont.innerHTML = `<div class="grid">${contratosCache.map(x => `
-      <article class="card">
-        <span class="status">Rol: ${x.rol_en_contrato \vert{}\vert{} 'Parte'} ·${x.estado || 'Borrador'}</span>
-        <h3>${x.titulo}</h3>
-        <p>${x.objeto ? (x.objeto.substring(0, 70) + '...') : '(sin descripción)'}<br><b>${money(x.valor)}</b> ·${new Date(x.created_at).toLocaleDateString('es-CO')}</p>
-        <button class="secondary" onclick="openSaved(${x.id})">Ver detalle</button>
-        <button class="ghost" style="margin-top:8px;width:100%" onclick="removeSaved(${x.id})">Eliminar</button>
-      </article>`).join('')}</div>`;
+    let html = '<div class="grid">';
+    contratosCache.forEach(function(x){
+      html += '<article class="card">' +
+        '<span class="status">Rol: ' + (x.rol_en_contrato || 'Parte') + ' · ' + (x.estado || 'Borrador') + '</span>' +
+        '<h3>' + x.titulo + '</h3>' +
+        '<p>' + (x.objeto ? (x.objeto.substring(0, 70) + '...') : '(sin descripción)') + '<br><b>' + money(x.valor) + '</b> · ' + new Date(x.created_at).toLocaleDateString('es-CO') + '</p>' +
+        '<button class="secondary" onclick="openSaved(' + x.id + ')">Ver detalle</button>' +
+        '<button class="ghost" style="margin-top:8px;width:100%" onclick="removeSaved(' + x.id + ')">Eliminar</button>' +
+      '</article>';
+    });
+    html += '</div>';
+    cont.innerHTML = html;
   } catch (err) {
-    cont.innerHTML = `<div class="empty"><h3>No se pudieron cargar tus contratos</h3><p>${err.message}</p></div>`;
+    cont.innerHTML = '<div class="empty"><h3>No se pudieron cargar tus contratos</h3><p>' + err.message + '</p></div>';
   }
 }
 
 async function openSaved(id){
   try {
-    const data = await apiFetch(`/contracts/${id}`);
-    $('preview').textContent = contractText(data.contrato);$('modal').classList.add('open');
+    const data = await apiFetch('/contracts/' + id);
+    $('preview').textContent = contractText(data.contrato);
+    $('modal').classList.add('open');
   } catch (err) {
     toast(err.message || 'No se pudo abrir el contrato.');
   }
@@ -418,7 +449,7 @@ async function openSaved(id){
 
 async function removeSaved(id){
   try {
-    await apiFetch(`/contracts/${id}`, { method: 'DELETE' });
+    await apiFetch('/contracts/' + id, { method: 'DELETE' });
     toast('Contrato eliminado.');
     renderContracts();
   } catch (err) {
@@ -427,16 +458,18 @@ async function removeSaved(id){
 }
 
 function clearForm(){
-  ['cliente','idCliente','freelancer','idFreelancer','objeto','valor','inicioFecha','finFecha'].forEach(id => $(id).value = '');$('cAlcance').checked = true;
+  ['cliente','idCliente','freelancer','idFreelancer','objeto','valor','inicioFecha','finFecha'].forEach(function(id){ $(id).value = ''; });
+  $('cAlcance').checked = true;
   $('cPI').checked = true;
   $('cConf').checked = false;
   toast('Formulario limpiado.');
 }
 
 function calc(){
-  let base = (+$('horas').value \vert{}\vert{} 0) * (+$('tarifa').value || 0);
+  let base = (+$('horas').value || 0) * (+$('tarifa').value || 0);
   let total = base * (1 + (+$('margen').value || 0) / 100);
-  $('base').textContent = money(base);$('sugerido').textContent = money(total);
+  $('base').textContent = money(base);
+  $('sugerido').textContent = money(total);
   $('anti').textContent = money(total * (+$('anticipo').value || 0) / 100);
 }
 
@@ -445,10 +478,10 @@ function toast(msg){
   t.textContent = msg;
   t.style.display = 'block';
   clearTimeout(window.tt);
-  window.tt = setTimeout(() => t.style.display = 'none', 3000);
+  window.tt = setTimeout(function(){ t.style.display = 'none'; }, 3000);
 }
 
-function help(){ toast('Tus contratos se guardan de forma relacional segura en la base de datos.') }
+function help(){ toast('Tus contratos se guardan de forma relacional segura en la base de datos.'); }
 </script>
 </body>
 </html>

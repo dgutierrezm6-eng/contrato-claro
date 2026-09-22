@@ -49,8 +49,8 @@
         <input type="text" id="input-name" placeholder="Ej. Danna Gutierrez" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00a884]">
       </div>
 
-      <!-- Campo: Identificación / CC (Solo Registro) -->
-      <div id="field-[#00a884]">
+      <!-- Campo: Identificación / CC (Solo Registro) [CORREGIDO ID] -->
+      <div id="field-identification">
         <label class="block text-xs font-bold text-gray-700 mb-1">Identificación / CC</label>
         <input type="text" id="input-identification" placeholder="1025536586" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00a884]">
       </div>
@@ -58,7 +58,7 @@
       <!-- Campo: Correo -->
       <div>
         <label class="block text-xs font-bold text-gray-700 mb-1">Correo</label>
-        <input type="email" id="input-email" required placeholder="dgutierrezm6@ucental.edu.co" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00a884]">
+        <input type="email" id="input-email" required placeholder="dgutierrezm6@ucentral.edu.co" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00a884]">
       </div>
 
       <!-- Campo: Contraseña -->
@@ -166,19 +166,16 @@
   <!-- LÓGICA DE JAVASCRIPT & CONEXIÓN API        -->
   <!-- ========================================== -->
   <script>
-    // Configuración de la URL de tu API en Render
     const API_URL = 'https://contrato-claro-backend.onrender.com/api';
     
     let currentAuthMode = 'register'; // 'register' o 'login'
     let currentUser = null;
 
-    // Inicialización al cargar la página
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       checkAuth();
     });
 
-    // Cambiar entre Pestañas Login / Registro
     function switchAuthTab(mode) {
       currentAuthMode = mode;
       hideAlert();
@@ -193,21 +190,20 @@
       if (mode === 'register') {
         tabRegister.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-[#00a884] shadow-sm transition-all";
         tabLogin.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-gray-600 transition-all";
-        fieldName.classList.remove('hidden');
-        fieldIdent.classList.remove('hidden');
-        fieldRole.classList.remove('hidden');
+        if (fieldName) fieldName.classList.remove('hidden');
+        if (fieldIdent) fieldIdent.classList.remove('hidden');
+        if (fieldRole) fieldRole.classList.remove('hidden');
         btnText.textContent = "Crear cuenta";
       } else {
         tabLogin.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-[#00a884] shadow-sm transition-all";
         tabRegister.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-gray-600 transition-all";
-        fieldName.classList.add('hidden');
-        fieldIdent.classList.add('hidden');
-        fieldRole.classList.add('hidden');
+        if (fieldName) fieldName.classList.add('hidden');
+        if (fieldIdent) fieldIdent.classList.add('hidden');
+        if (fieldRole) fieldRole.classList.add('hidden');
         btnText.textContent = "Iniciar sesión";
       }
     }
 
-    // Verificar si el usuario ya tiene sesión iniciada
     function checkAuth() {
       const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
@@ -220,7 +216,6 @@
       }
     }
 
-    // Enviar Registro o Login a la API
     async function handleAuthSubmit(e) {
       e.preventDefault();
       hideAlert();
@@ -253,10 +248,9 @@
         }
 
         if (currentAuthMode === 'register') {
-          showAlert('¡Cuenta creada con éxito! Ahora puedes iniciar sesión.', 'success');
+          showAlert('¡Cuenta creada con éxito! Ya puedes iniciar sesión.', 'success');
           switchAuthTab('login');
         } else {
-          // Login Exitoso
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user || { email }));
           currentUser = data.user || { email };
@@ -271,7 +265,6 @@
       }
     }
 
-    // Cargar contratos del usuario desde la BD
     async function loadContracts() {
       const container = document.getElementById('contracts-container');
       container.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">Cargando contratos...</div>`;
@@ -320,7 +313,6 @@
       }
     }
 
-    // Crear un nuevo contrato
     async function handleCreateContract(e) {
       e.preventDefault();
       const token = localStorage.getItem('token');
@@ -351,7 +343,6 @@
       }
     }
 
-    // Auxiliares de Interfaz
     function showAuthScreen() {
       document.getElementById('auth-screen').classList.remove('hidden');
       document.getElementById('app-screen').classList.add('hidden');

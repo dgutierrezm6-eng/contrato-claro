@@ -1,6 +1,7 @@
 import os
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
+from decimal import Decimal
 from functools import wraps
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -46,6 +47,19 @@ def execute_query(cursor, query, params=()):
     cursor.execute(query, params)
 
 
+def dict_from_row(row):
+    """ Convierte registros de BD a un diccionario seguro para JSON (maneja datetime y Decimal) """
+    if not row:
+        return None
+    d = dict(row)
+    for k, v in d.items():
+        if isinstance(v, (datetime, date)):
+            d[k] = v.isoformat()
+        elif isinstance(v, Decimal):
+            d[k] = float(v)
+    return d
+
+
 def init_db():
     conn = get_db()
     cursor = conn.cursor()
@@ -72,17 +86,26 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
-        # 3. CONTRATOS
+        # 3. CONTRATOS (Actualizado con todas las columnas de Supabase)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS contratos (
                 id SERIAL PRIMARY KEY,
+                usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
                 tipo TEXT,
                 titulo TEXT,
+                cliente_nombre TEXT,
+                cliente_identificacion TEXT,
+                freelancer_nombre TEXT,
+                freelancer_identificacion TEXT,
                 objeto TEXT,
                 valor REAL,
                 forma_pago TEXT,
                 fecha_inicio TEXT,
                 fecha_fin TEXT,
+                clausula_alcance BOOLEAN DEFAULT TRUE,
+                clausula_pi BOOLEAN DEFAULT TRUE,
+                clausula_confidencialidad BOOLEAN DEFAULT FALSE,
+                texto_contrato TEXT,
                 estado TEXT DEFAULT 'borrador',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -182,15 +205,25 @@ def init_db():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS contratos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario_id INTEGER,
                 tipo TEXT,
                 titulo TEXT,
+                cliente_nombre TEXT,
+                cliente_identificacion TEXT,
+                freelancer_nombre TEXT,
+                freelancer_identificacion TEXT,
                 objeto TEXT,
                 valor REAL,
                 forma_pago TEXT,
                 fecha_inicio TEXT,
                 fecha_fin TEXT,
+                clausula_alcance INTEGER DEFAULT 1,
+                clausula_pi INTEGER DEFAULT 1,
+                clausula_confidencialidad INTEGER DEFAULT 0,
+                texto_contrato TEXT,
                 estado TEXT DEFAULT 'borrador',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
             );
         ''')
         cursor.execute('''
@@ -267,7 +300,7 @@ def init_db():
             );
         ''')
 
-    # Insertar cláusulas estándar por defecto si la tabla está vacía
+    # Cláusulas estándar
     clausulas_base = [
         ('ALCANCE', 'Cláusula de Control de Alcance y Adendas'),
         ('PI', 'Cláusula de Cesión de Propiedad Intelectual'),
@@ -322,14 +355,12 @@ def register():
     conn = get_db()
     cursor = conn.cursor()
     try:
-        # 1. Crear Perfil en PERFILES_USUARIO
         if IS_POSTGRES:
             cursor.execute(
                 'INSERT INTO perfiles_usuario (nombre, identificacion, rol) VALUES (%s, %s, %s) RETURNING id',
                 (nombre, identificacion, rol)
             )
             perfil_id = cursor.fetchone()['id']
-            # 2. Crear Usuario en USUARIOS
             cursor.execute(
                 'INSERT INTO usuarios (perfil_id, correo, password) VALUES (%s, %s, %s) RETURNING id',
                 (perfil_id, correo, hashed)
@@ -418,13 +449,13 @@ def get_contracts():
         SELECT c.*, pc.rol_en_contrato 
         FROM contratos c
         JOIN partes_contrato pc ON c.id = pc.contrato_id
-        WHERE pc.perfil_id = ?
+        WHERE pc.perfil_id = ? OR c.usuario_id = ?
         ORDER BY c.id DESC
     '''
-    execute_query(cursor, query, (request.usuario['perfil_id'],))
+    execute_query(cursor, query, (request.usuario['perfil_id'], request.usuario['id']))
     rows = cursor.fetchall()
     conn.close()
-    return jsonify({'contratos': [dict(r) for r in rows]})
+    return jsonify({'contratos': [dict_from_row(r) for r in rows]})
 
 
 @app.route('/api/contracts/<int:contract_id>', methods=['GET'])
@@ -436,15 +467,15 @@ def get_contract(contract_id):
         SELECT c.*, pc.rol_en_contrato 
         FROM contratos c
         JOIN partes_contrato pc ON c.id = pc.contrato_id
-        WHERE c.id = ? AND pc.perfil_id = ?
+        WHERE c.id = ? AND (pc.perfil_id = ? OR c.usuario_id = ?)
     '''
-    execute_query(cursor, query, (contract_id, request.usuario['perfil_id']))
+    execute_query(cursor, query, (contract_id, request.usuario['perfil_id'], request.usuario['id']))
     row = cursor.fetchone()
     conn.close()
 
     if not row:
         return jsonify({'error': 'Contrato no encontrado.'}), 404
-    return jsonify({'contrato': dict(row)})
+    return jsonify({'contrato': dict_from_row(row)})
 
 
 @app.route('/api/contracts', methods=['POST'])
@@ -454,39 +485,59 @@ def create_contract():
     conn = get_db()
     cursor = conn.cursor()
 
-    # 1. Insertar el contrato en CONTRATOS
-    query_pg = '''
-        INSERT INTO contratos (tipo, titulo, objeto, valor, forma_pago, fecha_inicio, fecha_fin, estado)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
-    '''
-    query_sqlite = '''
-        INSERT INTO contratos (tipo, titulo, objeto, valor, forma_pago, fecha_inicio, fecha_fin, estado)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    '''
-    params = (
-        b.get('tipo'),
-        b.get('titulo'),
-        b.get('objeto'),
-        b.get('valor'),
-        b.get('formaPago'),
-        b.get('fechaInicio'),
-        b.get('fechaFin'),
-        'borrador'
-    )
+    usuario_id = request.usuario['id']
+    perfil_id = request.usuario['perfil_id']
+
+    tipo = b.get('tipo')
+    titulo = b.get('titulo')
+    cliente_nombre = b.get('clienteNombre')
+    cliente_identificacion = b.get('clienteIdentificacion')
+    freelancer_nombre = b.get('freelancerNombre')
+    freelancer_identificacion = b.get('freelancerIdentificacion')
+    objeto = b.get('objeto')
+    valor = b.get('valor', 0)
+    forma_pago = b.get('formaPago')
+    fecha_inicio = b.get('fechaInicio')
+    fecha_fin = b.get('fechaFin')
+    clausula_alcance = bool(b.get('clausulaAlcance', True))
+    clausula_pi = bool(b.get('clausulaPI', True))
+    clausula_confidencialidad = bool(b.get('clausulaConfidencialidad', False))
+    texto_contrato = b.get('textoContrato', '')
 
     if IS_POSTGRES:
-        cursor.execute(query_pg, params)
+        query_pg = '''
+            INSERT INTO contratos 
+            (usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion, freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago, fecha_inicio, fecha_fin, clausula_alcance, clausula_pi, clausula_confidencialidad, texto_contrato, estado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        '''
+        cursor.execute(query_pg, (
+            usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion,
+            freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago,
+            fecha_inicio, fecha_fin, clausula_alcance, clausula_pi, clausula_confidencialidad,
+            texto_contrato, 'borrador'
+        ))
         contract_id = cursor.fetchone()['id']
     else:
-        cursor.execute(query_sqlite, params)
+        query_sqlite = '''
+            INSERT INTO contratos 
+            (usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion, freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago, fecha_inicio, fecha_fin, clausula_alcance, clausula_pi, clausula_confidencialidad, texto_contrato, estado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        '''
+        cursor.execute(query_sqlite, (
+            usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion,
+            freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago,
+            fecha_inicio, fecha_fin, int(clausula_alcance), int(clausula_pi), int(clausula_confidencialidad),
+            texto_contrato, 'borrador'
+        ))
         contract_id = cursor.lastrowid
 
     # 2. Asociar al usuario actual en PARTES_CONTRATO
     rol_en_contrato = request.usuario.get('rol', 'freelancer')
     query_partes = 'INSERT INTO partes_contrato (contrato_id, perfil_id, rol_en_contrato) VALUES (?, ?, ?)'
-    execute_query(cursor, query_partes, (contract_id, request.usuario['perfil_id'], rol_en_contrato))
+    execute_query(cursor, query_partes, (contract_id, perfil_id, rol_en_contrato))
 
-    # 3. Asociar Cláusulas activadas en CONTRATOS_CLAUSULAS
+    # 3. Asociar Cláusulas activadas en CONTRATOS_CLAUSULAS (Relación N:M)
     clausulas_map = {
         'clausulaAlcance': 'ALCANCE',
         'clausulaPI': 'PI',
@@ -497,10 +548,11 @@ def create_contract():
             execute_query(cursor, 'SELECT id FROM clausulas WHERE codigo = ?', (codigo,))
             c_row = cursor.fetchone()
             if c_row:
+                c_id = c_row['id']
                 execute_query(
                     cursor,
                     'INSERT INTO contratos_clausulas (contrato_id, clausula_id) VALUES (?, ?)',
-                    (contract_id, c_row['id'])
+                    (contract_id, c_id)
                 )
 
     conn.commit()
@@ -513,9 +565,8 @@ def create_contract():
 def delete_contract(contract_id):
     conn = get_db()
     cursor = conn.cursor()
-    # Verifica que el usuario pertenezca al contrato antes de eliminarlo
-    query_check = 'SELECT contrato_id FROM partes_contrato WHERE contrato_id = ? AND perfil_id = ?'
-    execute_query(cursor, query_check, (contract_id, request.usuario['perfil_id']))
+    query_check = 'SELECT c.id FROM contratos c LEFT JOIN partes_contrato pc ON c.id = pc.contrato_id WHERE c.id = ? AND (pc.perfil_id = ? OR c.usuario_id = ?)'
+    execute_query(cursor, query_check, (contract_id, request.usuario['perfil_id'], request.usuario['id']))
     if not cursor.fetchone():
         conn.close()
         return jsonify({'error': 'Contrato no encontrado o no autorizado.'}), 404

@@ -1,582 +1,190 @@
 import os
-import sqlite3
-from datetime import datetime, date, timedelta
-from decimal import Decimal
-from functools import wraps
+import datetime
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import bcrypt
 import jwt
-
-# Intentar importar psycopg2 para PostgreSQL (Supabase)
-try:
-    import psycopg2
-    from psycopg2.extras import RealDictCursor
-    PSYCOPG2_AVAILABLE = True
-except ImportError:
-    PSYCOPG2_AVAILABLE = False
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Configuración de base de datos
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+# Habilitar CORS para permitir peticiones desde el navegador/frontend
+CORS(app)
 
-JWT_SECRET = os.environ.get('JWT_SECRET', 'clave_secreta_contrato_claro_2026')
-DB_PATH = os.environ.get('DB_PATH', 'database.db')
-
-IS_POSTGRES = bool(DATABASE_URL and PSYCOPG2_AVAILABLE)
-IntegrityErrors = (sqlite3.IntegrityError, psycopg2.IntegrityError) if PSYCOPG2_AVAILABLE else sqlite3.IntegrityError
-
+DATABASE_URL = os.environ.get("DATABASE_URL")
+SECRET_KEY = os.environ.get("JWT_SECRET", "clave_secreta_contrato_claro_2026")
 
 def get_db():
-    if IS_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
-        return conn
-    else:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn
-
-
-def execute_query(cursor, query, params=()):
-    if IS_POSTGRES:
-        query = query.replace('?', '%s')
-    cursor.execute(query, params)
-
-
-def dict_from_row(row):
-    """ Convierte registros de BD a un diccionario seguro para JSON (maneja datetime y Decimal) """
-    if not row:
-        return None
-    d = dict(row)
-    for k, v in d.items():
-        if isinstance(v, (datetime, date)):
-            d[k] = v.isoformat()
-        elif isinstance(v, Decimal):
-            d[k] = float(v)
-    return d
-
+    # Conexión obligatoria con SSL para Supabase
+    return psycopg2.connect(DATABASE_URL, sslmode='require', cursor_factory=RealDictCursor)
 
 def init_db():
-    conn = get_db()
-    cursor = conn.cursor()
+    if not DATABASE_URL:
+        print("DATABASE_URL no configurada.")
+        return
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Tabla de usuarios
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255),
+                identification VARCHAR(100),
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                role VARCHAR(50) DEFAULT 'Freelancer',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        
+        # Tabla de contratos
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS contracts (
+                id SERIAL PRIMARY KEY,
+                user_id INT REFERENCES users(id) ON DELETE CASCADE,
+                title VARCHAR(255) NOT NULL,
+                client VARCHAR(255) NOT NULL,
+                amount NUMERIC(12, 2) NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        print("Base de datos inicializada correctamente.")
+    except Exception as e:
+        print(f"Aviso al inicializar BD: {e}")
 
-    if IS_POSTGRES:
-        # 1. PERFILES_USUARIO
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS perfiles_usuario (
-                id SERIAL PRIMARY KEY,
-                nombre TEXT NOT NULL,
-                identificacion TEXT,
-                rol TEXT NOT NULL,
-                estado_identidad TEXT DEFAULT 'pendiente',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        ''')
-        # 2. USUARIOS
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id SERIAL PRIMARY KEY,
-                perfil_id INTEGER UNIQUE NOT NULL REFERENCES perfiles_usuario(id) ON DELETE CASCADE,
-                correo TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        ''')
-        # 3. CONTRATOS (Actualizado con todas las columnas de Supabase)
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS contratos (
-                id SERIAL PRIMARY KEY,
-                usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
-                tipo TEXT,
-                titulo TEXT,
-                cliente_nombre TEXT,
-                cliente_identificacion TEXT,
-                freelancer_nombre TEXT,
-                freelancer_identificacion TEXT,
-                objeto TEXT,
-                valor REAL,
-                forma_pago TEXT,
-                fecha_inicio TEXT,
-                fecha_fin TEXT,
-                clausula_alcance BOOLEAN DEFAULT TRUE,
-                clausula_pi BOOLEAN DEFAULT TRUE,
-                clausula_confidencialidad BOOLEAN DEFAULT FALSE,
-                texto_contrato TEXT,
-                estado TEXT DEFAULT 'borrador',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        ''')
-        # 4. PARTES_CONTRATO (N:M)
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS partes_contrato (
-                contrato_id INTEGER REFERENCES contratos(id) ON DELETE CASCADE,
-                perfil_id INTEGER REFERENCES perfiles_usuario(id) ON DELETE CASCADE,
-                rol_en_contrato TEXT,
-                PRIMARY KEY (contrato_id, perfil_id)
-            );
-        ''')
-        # 5. CLAUSULAS
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS clausulas (
-                id SERIAL PRIMARY KEY,
-                codigo TEXT UNIQUE NOT NULL,
-                nombre TEXT NOT NULL
-            );
-        ''')
-        # 6. CONTRATOS_CLAUSULAS (N:M)
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS contratos_clausulas (
-                contrato_id INTEGER REFERENCES contratos(id) ON DELETE CASCADE,
-                clausula_id INTEGER REFERENCES clausulas(id) ON DELETE CASCADE,
-                PRIMARY KEY (contrato_id, clausula_id)
-            );
-        ''')
-        # 7. HITOS
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS hitos (
-                id SERIAL PRIMARY KEY,
-                contrato_id INTEGER REFERENCES contratos(id) ON DELETE CASCADE,
-                titulo TEXT NOT NULL,
-                monto REAL NOT NULL,
-                estado TEXT DEFAULT 'pendiente',
-                archivo_url TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        ''')
-        # 8. CUSTODIA_ESCROW
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS custodia_escrow (
-                id SERIAL PRIMARY KEY,
-                contrato_id INTEGER REFERENCES contratos(id) ON DELETE CASCADE,
-                monto REAL NOT NULL,
-                estado TEXT DEFAULT 'en_custodia',
-                referencia_pago TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        ''')
-        # 9. HITOS_CUSTODIA
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS hitos_custodia (
-                id SERIAL PRIMARY KEY,
-                hito_id INTEGER REFERENCES hitos(id) ON DELETE CASCADE,
-                custodia_id INTEGER REFERENCES custodia_escrow(id) ON DELETE CASCADE,
-                estado_transaccion TEXT DEFAULT 'pendiente',
-                fecha_liberacion TIMESTAMP
-            );
-        ''')
-        # 10. DISPUTAS
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS disputas (
-                id SERIAL PRIMARY KEY,
-                contrato_id INTEGER REFERENCES contratos(id) ON DELETE CASCADE,
-                solicitante_perfil_id INTEGER REFERENCES perfiles_usuario(id) ON DELETE CASCADE,
-                motivo TEXT NOT NULL,
-                estado TEXT DEFAULT 'abierta',
-                resolucion TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        ''')
-    else:
-        # Estructura compatible para SQLite local
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS perfiles_usuario (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT NOT NULL,
-                identificacion TEXT,
-                rol TEXT NOT NULL,
-                estado_identidad TEXT DEFAULT 'pendiente',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                perfil_id INTEGER UNIQUE NOT NULL,
-                correo TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (perfil_id) REFERENCES perfiles_usuario(id) ON DELETE CASCADE
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS contratos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                usuario_id INTEGER,
-                tipo TEXT,
-                titulo TEXT,
-                cliente_nombre TEXT,
-                cliente_identificacion TEXT,
-                freelancer_nombre TEXT,
-                freelancer_identificacion TEXT,
-                objeto TEXT,
-                valor REAL,
-                forma_pago TEXT,
-                fecha_inicio TEXT,
-                fecha_fin TEXT,
-                clausula_alcance INTEGER DEFAULT 1,
-                clausula_pi INTEGER DEFAULT 1,
-                clausula_confidencialidad INTEGER DEFAULT 0,
-                texto_contrato TEXT,
-                estado TEXT DEFAULT 'borrador',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS partes_contrato (
-                contrato_id INTEGER NOT NULL,
-                perfil_id INTEGER NOT NULL,
-                rol_en_contrato TEXT,
-                PRIMARY KEY (contrato_id, perfil_id),
-                FOREIGN KEY (contrato_id) REFERENCES contratos(id) ON DELETE CASCADE,
-                FOREIGN KEY (perfil_id) REFERENCES perfiles_usuario(id) ON DELETE CASCADE
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS clausulas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                codigo TEXT UNIQUE NOT NULL,
-                nombre TEXT NOT NULL
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS contratos_clausulas (
-                contrato_id INTEGER NOT NULL,
-                clausula_id INTEGER NOT NULL,
-                PRIMARY KEY (contrato_id, clausula_id),
-                FOREIGN KEY (contrato_id) REFERENCES contratos(id) ON DELETE CASCADE,
-                FOREIGN KEY (clausula_id) REFERENCES clausulas(id) ON DELETE CASCADE
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS hitos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                contrato_id INTEGER NOT NULL,
-                titulo TEXT NOT NULL,
-                monto REAL NOT NULL,
-                estado TEXT DEFAULT 'pendiente',
-                archivo_url TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (contrato_id) REFERENCES contratos(id) ON DELETE CASCADE
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS custodia_escrow (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                contrato_id INTEGER NOT NULL,
-                monto REAL NOT NULL,
-                estado TEXT DEFAULT 'en_custodia',
-                referencia_pago TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (contrato_id) REFERENCES contratos(id) ON DELETE CASCADE
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS hitos_custodia (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                hito_id INTEGER NOT NULL,
-                custodia_id INTEGER NOT NULL,
-                estado_transaccion TEXT DEFAULT 'pendiente',
-                fecha_liberacion DATETIME,
-                FOREIGN KEY (hito_id) REFERENCES hitos(id) ON DELETE CASCADE,
-                FOREIGN KEY (custodia_id) REFERENCES custodia_escrow(id) ON DELETE CASCADE
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS disputas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                contrato_id INTEGER NOT NULL,
-                solicitante_perfil_id INTEGER NOT NULL,
-                motivo TEXT NOT NULL,
-                estado TEXT DEFAULT 'abierta',
-                resolucion TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (contrato_id) REFERENCES contratos(id) ON DELETE CASCADE,
-                FOREIGN KEY (solicitante_perfil_id) REFERENCES perfiles_usuario(id) ON DELETE CASCADE
-            );
-        ''')
-
-    # Cláusulas estándar
-    clausulas_base = [
-        ('ALCANCE', 'Cláusula de Control de Alcance y Adendas'),
-        ('PI', 'Cláusula de Cesión de Propiedad Intelectual'),
-        ('CONFIDENCIALIDAD', 'Cláusula de Confidencialidad y No Divulgación')
-    ]
-    for codigo, nombre in clausulas_base:
-        try:
-            if IS_POSTGRES:
-                cursor.execute('INSERT INTO clausulas (codigo, nombre) VALUES (%s, %s) ON CONFLICT DO NOTHING', (codigo, nombre))
-            else:
-                cursor.execute('INSERT OR IGNORE INTO clausulas (codigo, nombre) VALUES (?, ?)', (codigo, nombre))
-        except Exception:
-            pass
-
-    conn.commit()
-    conn.close()
-
-
+# Crear las tablas al iniciar la aplicación
 init_db()
 
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"status": "ok", "message": "Backend de Contrato Claro funcionando"}), 200
 
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return jsonify({'error': 'Acceso no autorizado. Inicia sesión.'}), 401
-        try:
-            token = auth_header.split(' ')[1]
-            data = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-            request.usuario = data
-        except Exception:
-            return jsonify({'error': 'Sesión expirada o inválida.'}), 401
-        return f(*args, **kwargs)
-    return decorated
-
-
-@app.route('/api/auth/register', methods=['POST'])
+# Endpoint de Registro
+@app.route("/api/register", methods=["POST"])
 def register():
     data = request.get_json() or {}
-    nombre = data.get('nombre')
-    correo = data.get('correo')
-    password = data.get('password')
-    rol = data.get('rol', 'freelancer')
-    identificacion = data.get('identificacion', '')
+    name = data.get("name")
+    identification = data.get("identification")
+    email = data.get("email")
+    password = data.get("password")
+    role = data.get("role", "Freelancer")
 
-    if not nombre or not correo or not password:
-        return jsonify({'error': 'Completa todos los campos requeridos.'}), 400
+    if not email or not password:
+        return jsonify({"error": "Correo y contraseña son requeridos"}), 400
 
-    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    hashed_pw = generate_password_hash(password)
 
-    conn = get_db()
-    cursor = conn.cursor()
     try:
-        if IS_POSTGRES:
-            cursor.execute(
-                'INSERT INTO perfiles_usuario (nombre, identificacion, rol) VALUES (%s, %s, %s) RETURNING id',
-                (nombre, identificacion, rol)
-            )
-            perfil_id = cursor.fetchone()['id']
-            cursor.execute(
-                'INSERT INTO usuarios (perfil_id, correo, password) VALUES (%s, %s, %s) RETURNING id',
-                (perfil_id, correo, hashed)
-            )
-            user_id = cursor.fetchone()['id']
-        else:
-            cursor.execute(
-                'INSERT INTO perfiles_usuario (nombre, identificacion, rol) VALUES (?, ?, ?)',
-                (nombre, identificacion, rol)
-            )
-            perfil_id = cursor.lastrowid
-            cursor.execute(
-                'INSERT INTO usuarios (perfil_id, correo, password) VALUES (?, ?, ?)',
-                (perfil_id, correo, hashed)
-            )
-            user_id = cursor.lastrowid
+        conn = get_db()
+        cur = conn.cursor()
+        
+        cur.execute("SELECT id FROM users WHERE email = %s;", (email,))
+        if cur.fetchone():
+            cur.close()
+            conn.close()
+            return jsonify({"error": "El correo ya está registrado"}), 400
 
+        cur.execute(
+            "INSERT INTO users (name, identification, email, password, role) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
+            (name, identification, email, hashed_pw, role)
+        )
         conn.commit()
-    except IntegrityErrors:
+        cur.close()
         conn.close()
-        return jsonify({'error': 'Este correo ya está registrado.'}), 400
+        return jsonify({"message": "Usuario registrado exitosamente"}), 201
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {str(e)}"}), 500
 
-    conn.close()
-    
-    token = jwt.encode({
-        'id': user_id,
-        'perfil_id': perfil_id,
-        'correo': correo,
-        'rol': rol,
-        'exp': datetime.utcnow() + timedelta(days=7)
-    }, JWT_SECRET, algorithm='HS256')
-
-    return jsonify({
-        'token': token,
-        'usuario': {'id': user_id, 'perfil_id': perfil_id, 'nombre': nombre, 'correo': correo, 'rol': rol}
-    })
-
-
-@app.route('/api/auth/login', methods=['POST'])
+# Endpoint de Login
+@app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
-    correo = data.get('correo')
-    password = data.get('password')
+    email = data.get("email")
+    password = data.get("password")
 
-    conn = get_db()
-    cursor = conn.cursor()
-    query = '''
-        SELECT u.id, u.perfil_id, u.correo, u.password, p.nombre, p.rol 
-        FROM usuarios u
-        JOIN perfiles_usuario p ON u.perfil_id = p.id
-        WHERE u.correo = ?
-    '''
-    execute_query(cursor, query, (correo,))
-    user = cursor.fetchone()
-    conn.close()
+    if not email or not password:
+        return jsonify({"error": "Campos incompletos"}), 400
 
-    if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
-        return jsonify({'error': 'Correo o contraseña incorrectos.'}), 401
-
-    token = jwt.encode({
-        'id': user['id'],
-        'perfil_id': user['perfil_id'],
-        'correo': user['correo'],
-        'rol': user['rol'],
-        'exp': datetime.utcnow() + timedelta(days=7)
-    }, JWT_SECRET, algorithm='HS256')
-
-    return jsonify({
-        'token': token,
-        'usuario': {
-            'id': user['id'],
-            'perfil_id': user['perfil_id'],
-            'nombre': user['nombre'],
-            'correo': user['correo'],
-            'rol': user['rol']
-        }
-    })
-
-
-@app.route('/api/contracts', methods=['GET'])
-@token_required
-def get_contracts():
-    conn = get_db()
-    cursor = conn.cursor()
-    query = '''
-        SELECT c.*, pc.rol_en_contrato 
-        FROM contratos c
-        JOIN partes_contrato pc ON c.id = pc.contrato_id
-        WHERE pc.perfil_id = ? OR c.usuario_id = ?
-        ORDER BY c.id DESC
-    '''
-    execute_query(cursor, query, (request.usuario['perfil_id'], request.usuario['id']))
-    rows = cursor.fetchall()
-    conn.close()
-    return jsonify({'contratos': [dict_from_row(r) for r in rows]})
-
-
-@app.route('/api/contracts/<int:contract_id>', methods=['GET'])
-@token_required
-def get_contract(contract_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    query = '''
-        SELECT c.*, pc.rol_en_contrato 
-        FROM contratos c
-        JOIN partes_contrato pc ON c.id = pc.contrato_id
-        WHERE c.id = ? AND (pc.perfil_id = ? OR c.usuario_id = ?)
-    '''
-    execute_query(cursor, query, (contract_id, request.usuario['perfil_id'], request.usuario['id']))
-    row = cursor.fetchone()
-    conn.close()
-
-    if not row:
-        return jsonify({'error': 'Contrato no encontrado.'}), 404
-    return jsonify({'contrato': dict_from_row(row)})
-
-
-@app.route('/api/contracts', methods=['POST'])
-@token_required
-def create_contract():
-    b = request.get_json() or {}
-    conn = get_db()
-    cursor = conn.cursor()
-
-    usuario_id = request.usuario['id']
-    perfil_id = request.usuario['perfil_id']
-
-    tipo = b.get('tipo')
-    titulo = b.get('titulo')
-    cliente_nombre = b.get('clienteNombre')
-    cliente_identificacion = b.get('clienteIdentificacion')
-    freelancer_nombre = b.get('freelancerNombre')
-    freelancer_identificacion = b.get('freelancerIdentificacion')
-    objeto = b.get('objeto')
-    valor = b.get('valor', 0)
-    forma_pago = b.get('formaPago')
-    fecha_inicio = b.get('fechaInicio')
-    fecha_fin = b.get('fechaFin')
-    clausula_alcance = bool(b.get('clausulaAlcance', True))
-    clausula_pi = bool(b.get('clausulaPI', True))
-    clausula_confidencialidad = bool(b.get('clausulaConfidencialidad', False))
-    texto_contrato = b.get('textoContrato', '')
-
-    if IS_POSTGRES:
-        query_pg = '''
-            INSERT INTO contratos 
-            (usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion, freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago, fecha_inicio, fecha_fin, clausula_alcance, clausula_pi, clausula_confidencialidad, texto_contrato, estado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-        '''
-        cursor.execute(query_pg, (
-            usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion,
-            freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago,
-            fecha_inicio, fecha_fin, clausula_alcance, clausula_pi, clausula_confidencialidad,
-            texto_contrato, 'borrador'
-        ))
-        contract_id = cursor.fetchone()['id']
-    else:
-        query_sqlite = '''
-            INSERT INTO contratos 
-            (usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion, freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago, fecha_inicio, fecha_fin, clausula_alcance, clausula_pi, clausula_confidencialidad, texto_contrato, estado)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        '''
-        cursor.execute(query_sqlite, (
-            usuario_id, tipo, titulo, cliente_nombre, cliente_identificacion,
-            freelancer_nombre, freelancer_identificacion, objeto, valor, forma_pago,
-            fecha_inicio, fecha_fin, int(clausula_alcance), int(clausula_pi), int(clausula_confidencialidad),
-            texto_contrato, 'borrador'
-        ))
-        contract_id = cursor.lastrowid
-
-    # 2. Asociar al usuario actual en PARTES_CONTRATO
-    rol_en_contrato = request.usuario.get('rol', 'freelancer')
-    query_partes = 'INSERT INTO partes_contrato (contrato_id, perfil_id, rol_en_contrato) VALUES (?, ?, ?)'
-    execute_query(cursor, query_partes, (contract_id, perfil_id, rol_en_contrato))
-
-    # 3. Asociar Cláusulas activadas en CONTRATOS_CLAUSULAS (Relación N:M)
-    clausulas_map = {
-        'clausulaAlcance': 'ALCANCE',
-        'clausulaPI': 'PI',
-        'clausulaConfidencialidad': 'CONFIDENCIALIDAD'
-    }
-    for flag, codigo in clausulas_map.items():
-        if b.get(flag):
-            execute_query(cursor, 'SELECT id FROM clausulas WHERE codigo = ?', (codigo,))
-            c_row = cursor.fetchone()
-            if c_row:
-                c_id = c_row['id']
-                execute_query(
-                    cursor,
-                    'INSERT INTO contratos_clausulas (contrato_id, clausula_id) VALUES (?, ?)',
-                    (contract_id, c_id)
-                )
-
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'id': contract_id})
-
-
-@app.route('/api/contracts/<int:contract_id>', methods=['DELETE'])
-@token_required
-def delete_contract(contract_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    query_check = 'SELECT c.id FROM contratos c LEFT JOIN partes_contrato pc ON c.id = pc.contrato_id WHERE c.id = ? AND (pc.perfil_id = ? OR c.usuario_id = ?)'
-    execute_query(cursor, query_check, (contract_id, request.usuario['perfil_id'], request.usuario['id']))
-    if not cursor.fetchone():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE email = %s;", (email,))
+        user = cur.fetchone()
+        cur.close()
         conn.close()
-        return jsonify({'error': 'Contrato no encontrado o no autorizado.'}), 404
 
-    execute_query(cursor, 'DELETE FROM contratos WHERE id = ?', (contract_id,))
-    conn.commit()
-    conn.close()
-    return jsonify({'message': 'Contrato eliminado con éxito.'})
+        if not user or not check_password_hash(user["password"], password):
+            return jsonify({"error": "Credenciales inválidas"}), 401
 
+        token = jwt.encode({
+            "user_id": user["id"],
+            "email": user["email"],
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(days=7)
+        }, SECRET_KEY, algorithm="HS256")
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+        return jsonify({
+            "token": token,
+            "user": {
+                "id": user["id"],
+                "name": user["name"],
+                "email": user["email"],
+                "role": user["role"]
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({"error": f"Error en la autenticación: {str(e)}"}), 500
+
+# Endpoint de Contratos (Obtener y Crear)
+@app.route("/api/contracts", methods=["GET", "POST"])
+def contracts():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Token de autenticación faltante"}), 401
+
+    token = auth_header.split(" ")[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        user_id = payload["user_id"]
+    except Exception:
+        return jsonify({"error": "Sesión inválida o expirada"}), 401
+
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+
+        if request.method == "POST":
+            data = request.get_json() or {}
+            title = data.get("title")
+            client = data.get("client")
+            amount = data.get("amount")
+            description = data.get("description")
+
+            cur.execute(
+                "INSERT INTO contracts (user_id, title, client, amount, description) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
+                (user_id, title, client, amount, description)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+            return jsonify({"message": "Contrato creado exitosamente"}), 201
+
+        else:  # GET
+            cur.execute("SELECT * FROM contracts WHERE user_id = %s ORDER BY created_at DESC;", (user_id,))
+            contracts_list = cur.fetchall()
+            cur.close()
+            conn.close()
+            return jsonify(contracts_list), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error procesando solicitud: {str(e)}"}), 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

@@ -160,71 +160,36 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 </div>
 
 <script>
-// Configuración - REEMPLAZA ESTO
-var SUPABASE_URL = 'TU_SUPABASE_URL';
-var SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+// Configuración de Supabase (reemplaza con tus llaves reales)
+var SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
+var SUPABASE_ANON_KEY = 'TU_ANON_KEY';
 var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 var currentProfile = null;
 
 function $(id) { return document.getElementById(id); }
 
+// --- CONTROL DE VISTAS Y TABS ---
 function showLogin() {
-  console.log('showLogin called');
   $('tabLoginBtn').classList.add('active');
-  $('tabRegisterBtn').classList.remove('active');
-  $('loginForm').classList.add('active');
-  $('registerForm').classList.remove('active');
-  $('authError').style.display = 'none';
+  $('tabRegisterBtn').classList.remove('active');$('loginForm').classList.add('active');
+  $('registerForm').classList.remove('active');$('authError').style.display = 'none';
 }
 
 function showRegister() {
-  console.log('showRegister called');
   $('tabRegisterBtn').classList.add('active');
-  $('tabLoginBtn').classList.remove('active');
-  $('registerForm').classList.add('active');
-  $('loginForm').classList.remove('active');
-  $('authError').style.display = 'none';
+  $('tabLoginBtn').classList.remove('active');$('registerForm').classList.add('active');
+  $('loginForm').classList.remove('active');$('authError').style.display = 'none';
 }
-
-$('loginForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  console.log('Login submit');
-  try {
-    var result = await supabase.auth.signInWithPassword({
-      email: $('loginCorreo').value.trim(),
-      password: $('loginPassword').value
-    });
-    if (result.error) throw result.error;
-    alert('Login exitoso: ' + result.data.user.email);
-  } catch (err) {
-    $('authError').textContent = err.message;
-    $('authError').style.display = 'block';
-  }
-});
-
-$('registerForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  console.log('Register submit');
-  try {
-    var result = await supabase.auth.signUp({
-      email: $('regCorreo').value.trim(),
-      password: $('regPassword').value,
-      options: { data: { nombre: $('regNombre').value, rol: $('regRol').value } }
-    });
-    if (result.error) throw result.error;
-    alert('Registro exitoso. Verifica tu correo');
-    showLogin();
-  } catch (err) {
-    $('authError').textContent = err.message;
-    $('authError').style.display = 'block';
-  }
-});
 
 function showView(view) {
   ['inicio', 'crear', 'contratos', 'calculadora'].forEach(function(v) {
     $('view-' + v).style.display = v === view ? 'block' : 'none';
   });
+
+  if (view === 'contratos') {
+    loadContracts();
+  }
 }
 
 function startContract(tipo) {
@@ -232,34 +197,164 @@ function startContract(tipo) {
   showView('crear');
 }
 
-function handleLogout() {
-  supabase.auth.signOut();
+// --- AUTENTICACIÓN ---
+$('loginForm').addEventListener('submit', async function(e) {   e.preventDefault();$('authError').style.display = 'none';
+  
+  try {
+    var result = await supabase.auth.signInWithPassword({
+      email: $('loginCorreo').value.trim(),
+      password: $('loginPassword').value
+    });
+    
+    if (result.error) throw result.error;
+    
+    checkSession();
+  } catch (err) {
+    $('authError').textContent = err.message;
+    $('authError').style.display = 'block';
+  }
+});
+
+$('registerForm').addEventListener('submit', async function(e) {   e.preventDefault();$('authError').style.display = 'none';
+  
+  try {
+    var result = await supabase.auth.signUp({
+      email: $('regCorreo').value.trim(),
+      password: $('regPassword').value,
+      options: { 
+        data: { 
+          nombre: $('regNombre').value.trim(),
+          identificacion: $('regIdentificacion').value.trim(),
+          rol: $('regRol').value 
+        } 
+      }
+    });
+
+    if (result.error) throw result.error;
+    
+    alert('Registro exitoso. Revisa tu correo para confirmar la cuenta o inicia sesión.');
+    showLogin();
+  } catch (err) {
+    $('authError').textContent = err.message;
+    $('authError').style.display = 'block';
+  }
+});
+
+async function handleLogout() {
+  await supabase.auth.signOut();
   currentProfile = null;
-  $('appRoot').classList.remove('active');
-  $('authScreen').style.display = 'flex';
+  $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
 }
 
+// --- OPERACIONES EN LA BASE DE DATOS ---
+
+// 1. Guardar Contrato en tabla 'CONTRATOS'
 async function createContract() {
-  if (!$('titulo').value || !$('objeto').value) { alert('Completa los campos'); return; }
-  alert('Contrato: ' + $('titulo').value);
+  var tipo = $('tipo').value;
+  var titulo = $('titulo').value.trim();
+  var objeto = $('objeto').value.trim();
+  var valor = parseFloat($('valor').value);
+  var forma_pago = $('forma_pago').value;
+
+  if (!titulo || !objeto || isNaN(valor)) { 
+    alert('Por favor completa todos los campos requeridos.'); 
+    return; 
+  }
+
+  try {
+    var user = (await supabase.auth.getUser()).data.user;
+
+    var response = await supabase.from('CONTRATOS').insert([
+      {
+        tipo: tipo,
+        titulo: titulo,
+        objeto: objeto,
+        valor: valor,
+        forma_pago: forma_pago,
+        estado: 'Pendiente'
+      }
+    ]).select();
+
+    if (response.error) throw response.error;
+
+    alert('¡Contrato creado correctamente!');
+    
+    // Limpiar formulario y redirigir
+    $('titulo').value = '';
+    $('objeto').value = '';$('valor').value = '';
+    showView('contratos');
+
+  } catch (err) {
+    alert('Error al guardar el contrato: ' + err.message);
+  }
 }
 
+// 2. Leer Contratos desde Supabase
+async function loadContracts() {
+  var container = $('contractList');
+  container.innerHTML = '<p style="color:#627d98;">Cargando contratos...</p>';
+
+  try {
+    var response = await supabase
+      .from('CONTRATOS')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (response.error) throw response.error;
+
+    var contratos = response.data;
+
+    if (!contratos || contratos.length === 0) {
+      container.innerHTML = `
+        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;text-align:center;">
+          <p style="color:#627d98;">No tienes contratos registrados.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = contratos.map(function(c) {
+      return `
+        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h3 style="margin:0;font-size:16px;">${c.titulo}</h3>
+            <span style="background:#e9fbf1;color:#087c38;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:800;">
+              $${Number(c.valor || 0).toLocaleString('es-CO')}
+            </span>
+          </div>
+          <p style="font-size:13px;color:#486581;margin-bottom:10px;">${c.objeto}</p>
+          <div style="display:flex;gap:12px;font-size:12px;color:#627d98;">
+            <span>Tipo: <b>${c.tipo}</b></span>
+            <span>Pago: <b>${c.forma_pago}</b></span>
+            <span>Estado: <b>${c.estado}</b></span>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (err) {
+    container.innerHTML = '<p style="color:#b42318;">Error al cargar contratos: ' + err.message + '</p>';
+  }
+}
+
+// --- CALCULADORA ---
 function calc() {
   var base = Number($('horas').value) * Number($('tarifa').value);
   $('base').textContent = '$' + base.toLocaleString('es-CO');
 }
 
-// Check session on load
-(async function() {
-  var result = await supabase.auth.getSession();
-  if (result.data && result.data.session) {
-    console.log('Session found');
-    $('authScreen').style.display = 'none';
-    $('appRoot').classList.add('active');
+// --- VERIFICAR SESIÓN INICIAL ---
+async function checkSession() {
+  var sessionResponse = await supabase.auth.getSession();
+  if (sessionResponse.data && sessionResponse.data.session) {
+    var user = sessionResponse.data.session.user;
+    $('sessionBadge').textContent = '● ' + (user.user_metadata.nombre || user.email);
+    $('authScreen').style.display = 'none';$('appRoot').classList.add('active');
+    showView('inicio');
+  } else {
+    $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
   }
-})();
+}
 
-console.log('Script loaded successfully');
+checkSession();
 </script>
 </body>
 </html>

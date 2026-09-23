@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contrato Claro</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
+.auth-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0b2545,#124e78);padding:20px}
+.auth-card{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 14px 40px rgba(16,42,67,0.1)}
+.auth-brand{font-weight:800;font-size:20px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.logo{width:32px;height:32px;background:#0b2545;border-radius:8px;position:relative}
+.logo:after{content:"✓";position:absolute;color:#fff;font-weight:900;font-size:20px;left:7px;top:-2px}
+.auth-tabs{display:flex;gap:6px;background:#f0f4f8;border-radius:9px;padding:4px;margin:18px 0}
+.auth-tabs button{flex:1;border:0;background:transparent;padding:9px;border-radius:7px;font-weight:800;color:#627d98;cursor:pointer}
+.auth-tabs button.active{background:#fff;color:#087f80;box-shadow:0 2px 6px rgba(16,42,67,0.08)}
+.auth-field{margin-bottom:13px}
+.auth-field label{display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#334e68}
+.auth-field input,.auth-field select{width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;font-size:14px}
+.auth-field input:focus,.auth-field select:focus{outline:none;border-color:#00a6a6;box-shadow:0 0 0 3px rgba(0,166,166,0.1)}
+.btn-primary{width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;font-size:15px}
+.btn-primary:hover{background:#008f8f}
+.alert{background:#fef2f0;color:#b42318;padding:12px;border-radius:7px;margin:16px 0;border-left:4px solid #b42318;display:none}
+.auth-form{display:none}
+.auth-form.active{display:block}
+.app{display:none}
+.app.active{display:block}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="authScreen" class="auth-container">
+  <div class="auth-card">
+    <div class="auth-brand"><div class="logo"></div>Contrato Claro</div>
+    <p style="font-size:13px;color:#627d98;margin-bottom:18px">Plataforma freelance con custodia de fondos</p>
+
+    <div class="auth-tabs">
+      <button id="tabLoginBtn" class="active" type="button" onclick="showLogin()">Iniciar sesión</button>
+      <button id="tabRegisterBtn" type="button" onclick="showRegister()">Crear cuenta</button>
+    </div>
+
+    <div id="authError" class="alert"></div>
+
+    <form id="loginForm" class="auth-form active">
+      <div class="auth-field">
+        <label for="loginCorreo">Correo</label>
+        <input id="loginCorreo" type="email" required placeholder="tucorreo@ejemplo.com">
+      </div>
+      <div class="auth-field">
+        <label for="loginPassword">Contraseña</label>
+        <input id="loginPassword" type="password" required placeholder="••••••••">
+      </div>
+      <button class="btn-primary" type="submit">Entrar</button>
+    </form>
+
+    <form id="registerForm" class="auth-form">
+      <div class="auth-field">
+        <label for="regNombre">Nombre completo</label>
+        <input id="regNombre" required placeholder="Tu nombre">
+      </div>
+      <div class="auth-field">
+        <label for="regIdentificacion">Identificación</label>
+        <input id="regIdentificacion" placeholder="Ej.: 10203040">
+      </div>
+      <div class="auth-field">
+        <label for="regCorreo">Correo</label>
+        <input id="regCorreo" type="email" required placeholder="tucorreo@ejemplo.com">
+      </div>
+      <div class="auth-field">
+        <label for="regPassword">Contraseña</label>
+        <input id="regPassword" type="password" required minlength="6" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="auth-field">
+        <label for="regRol">Eres...</label>
+        <select id="regRol">
+          <option value="Freelancer">Freelancer</option>
+          <option value="Cliente o Contratante">Cliente / Contratante</option>
+        </select>
+      </div>
+      <button class="btn-primary" type="submit">Crear cuenta</button>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appRoot" class="app">
+  <div style="background:#fff;padding:15px 28px;border-bottom:1px solid #d9e2ec;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-weight:800;font-size:20px;display:flex;align-items:center;gap:10px"><div class="logo"></div>Contrato Claro</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="sessionBadge" style="background:#e9fbf1;color:#087c38;padding:5px 10px;border-radius:99px;font-size:12px;font-weight:800">● Sesión</span>
+      <button onclick="handleLogout()" style="background:#d9e2ec;border:0;border-radius:50%;width:34px;height:34px;font-weight:800;cursor:pointer">FC</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 68px)">
+    <aside style="background:#fff;border-right:1px solid #d9e2ec;padding:22px 14px">
+      <nav style="display:flex;flex-direction:column;gap:3px">
+        <button onclick="showView('inicio')" style="background:#e9f7f7;color:#087f80;border:0;padding:11px 13px;border-radius:9px;text-align:left;cursor:pointer;font-weight:650">⌂ Inicio</button>
+        <button onclick="showView('crear')" style="background:transparent;border:0;padding:11px 13px;border-radius:9px;text-align:left;cursor:pointer;font-weight:650;color:#486581">＋ Crear</button>
+        <button onclick="showView('contratos')" style="background:transparent;border:0;padding:11px 13px;border-radius:9px;text-align:left;cursor:pointer;font-weight:650;color:#486581">▣ Contratos</button>
+        <button onclick="showView('calculadora')" style="background:transparent;border:0;padding:11px 13px;border-radius:9px;text-align:left;cursor:pointer;font-weight:650;color:#486581">▤ Calculadora</button>
+      </nav>
+    </aside>
+    <main style="padding:30px">
+      <section id="view-inicio">
+        <div style="background:linear-gradient(115deg,#0b2545,#124e78);padding:28px 30px;border-radius:17px;color:#fff;margin-bottom:29px">
+          <h1 style="font-size:27px;margin:0 0 6px">Trabaja con seguridad</h1>
+          <p style="opacity:0.87;margin:0">Contratos con custodia, hitos y disputas</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
+            <div style="font-size:21px;margin-bottom:12px">🧾</div>
+            <h3 style="margin:0 0 5px;font-size:16px">Prestación de Servicios</h3>
+            <button onclick="startContract('Prestación de Servicios')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:16px">Usar plantilla</button>
+          </div>
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
+            <div style="font-size:21px;margin-bottom:12px">💻</div>
+            <h3 style="margin:0 0 5px;font-size:16px">Obra / Proyecto</h3>
+            <button onclick="startContract('Obra/Proyecto')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:16px">Usar plantilla</button>
+          </div>
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
+            <div style="font-size:21px;margin-bottom:12px">🎨</div>
+            <h3 style="margin:0 0 5px;font-size:16px">Consultoría</h3>
+            <button onclick="startContract('Consultoría')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:16px">Usar plantilla</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-crear" style="display:none">
+        <h2 style="margin-bottom:20px">Crear contrato</h2>
+        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px">
+            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Tipo</label><select id="tipo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Prestación de Servicios</option><option>Obra/Proyecto</option><option>Consultoría</option></select></div>
+            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título</label><input id="titulo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
+            <div style="grid-column:1/-1"><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Objeto</label><textarea id="objeto" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;min-height:88px"></textarea></div>
+            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Valor (COP)</label><input id="valor" type="number" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
+            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Pago</label><select id="forma_pago" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Por Hitos</option><option>Pago Único</option><option>50/50</option></select></div>
+          </div>
+          <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:20px">Guardar contrato</button>
+        </div>
+      </section>
+
+      <section id="view-contratos" style="display:none">
+        <h2 style="margin-bottom:20px">Mis contratos</h2>
+        <div id="contractList"></div>
+      </section>
+
+      <section id="view-calculadora" style="display:none">
+        <h2 style="margin-bottom:20px">Calculadora</h2>
+        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
+          <p>Horas: <input type="number" id="horas" value="40" oninput="calc()"></p>
+          <p>Tarifa: <input type="number" id="tarifa" value="50000" oninput="calc()"></p>
+          <p>Base: <b id="base">$0</b></p>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+// Configuración - REEMPLAZA ESTO
+var SUPABASE_URL = 'TU_SUPABASE_URL';
+var SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+var currentProfile = null;
+
+function $(id) { return document.getElementById(id); }
+
+function showLogin() {
+  console.log('showLogin called');
+  $('tabLoginBtn').classList.add('active');
+  $('tabRegisterBtn').classList.remove('active');
+  $('loginForm').classList.add('active');
+  $('registerForm').classList.remove('active');
+  $('authError').style.display = 'none';
+}
+
+function showRegister() {
+  console.log('showRegister called');
+  $('tabRegisterBtn').classList.add('active');
+  $('tabLoginBtn').classList.remove('active');
+  $('registerForm').classList.add('active');
+  $('loginForm').classList.remove('active');
+  $('authError').style.display = 'none';
+}
+
+$('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  console.log('Login submit');
+  try {
+    var result = await supabase.auth.signInWithPassword({
+      email: $('loginCorreo').value.trim(),
+      password: $('loginPassword').value
+    });
+    if (result.error) throw result.error;
+    alert('Login exitoso: ' + result.data.user.email);
+  } catch (err) {
+    $('authError').textContent = err.message;
+    $('authError').style.display = 'block';
+  }
+});
+
+$('registerForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  console.log('Register submit');
+  try {
+    var result = await supabase.auth.signUp({
+      email: $('regCorreo').value.trim(),
+      password: $('regPassword').value,
+      options: { data: { nombre: $('regNombre').value, rol: $('regRol').value } }
+    });
+    if (result.error) throw result.error;
+    alert('Registro exitoso. Verifica tu correo');
+    showLogin();
+  } catch (err) {
+    $('authError').textContent = err.message;
+    $('authError').style.display = 'block';
+  }
+});
+
+function showView(view) {
+  ['inicio', 'crear', 'contratos', 'calculadora'].forEach(function(v) {
+    $('view-' + v).style.display = v === view ? 'block' : 'none';
+  });
+}
+
+function startContract(tipo) {
+  $('tipo').value = tipo;
+  showView('crear');
+}
+
+function handleLogout() {
+  supabase.auth.signOut();
+  currentProfile = null;
+  $('appRoot').classList.remove('active');
+  $('authScreen').style.display = 'flex';
+}
+
+async function createContract() {
+  if (!$('titulo').value || !$('objeto').value) { alert('Completa los campos'); return; }
+  alert('Contrato: ' + $('titulo').value);
+}
+
+function calc() {
+  var base = Number($('horas').value) * Number($('tarifa').value);
+  $('base').textContent = '$' + base.toLocaleString('es-CO');
+}
+
+// Check session on load
+(async function() {
+  var result = await supabase.auth.getSession();
+  if (result.data && result.data.session) {
+    console.log('Session found');
+    $('authScreen').style.display = 'none';
+    $('appRoot').classList.add('active');
+  }
+})();
+
+console.log('Script loaded successfully');
+</script>
+</body>
+</html>

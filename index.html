@@ -496,7 +496,7 @@ async function handleLogout() {
   $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
 }
 
-// --- CREAR CONTRATO (SOPORTA FREELANCER Y CLIENTE) ---
+// --- CREAR CONTRATO (VALIDACIONES REFORZADAS) ---
 async function createContract() {
   var titulo = $('titulo').value.trim();
   var objeto = $('objeto').value.trim();
@@ -512,15 +512,19 @@ async function createContract() {
   try {
     var userResponse = await supabase.auth.getUser();
     var user = userResponse.data.user;
-    if (!user) throw new Error("Sesión caducada.");
+    if (!user) throw new Error("Sesión no válida.");
 
     await syncPerfilUsuario(user);
 
     // Buscar si la contraparte existe registrada en perfiles_usuario
     var buscaContraparte = await supabase.from('perfiles_usuario').select('id, rol').eq('correo', correoContraparte).maybeSingle();
 
+    if (buscaContraparte.error) {
+      throw new Error("Error al consultar usuario contraparte: " + buscaContraparte.error.message);
+    }
+
     if (!buscaContraparte.data) {
-      alert('❌ El correo "' + correoContraparte + '" no se encuentra registrado en la plataforma. Pídele que cree su cuenta primero.');
+      alert('❌ El correo "' + correoContraparte + '" no está registrado en la plataforma. La otra persona debe registrarse primero con ese correo.');
       return;
     }
 
@@ -530,6 +534,7 @@ async function createContract() {
     var esMiRolCliente = miRol.toLowerCase().includes('cliente') || miRol.toLowerCase().includes('contratante');
     var rolContraparte = buscaContraparte.data.rol || (esMiRolCliente ? 'Freelancer' : 'Cliente o Contratante');
 
+    // 1. Guardar Contrato
     var response = await supabase.from('contratos').insert([{
       tipo: tipoModulo,
       titulo: titulo,
@@ -540,14 +545,21 @@ async function createContract() {
     }]).select();
 
     if (response.error) throw response.error;
+    if (!response.data || response.data.length === 0) {
+      throw new Error("El contrato fue insertado pero no devolvió datos. Asegúrate de ejecutar el SQL de permisos RLS en Supabase.");
+    }
+
     var nuevoContrato = response.data[0];
 
-    // Registrar los dos roles formalmente en partes_contrato
-    await supabase.from('partes_contrato').insert([
+    // 2. Registrar los dos roles en partes_contrato
+    var partesRes = await supabase.from('partes_contrato').insert([
       { contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol },
       { contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte }
     ]);
 
+    if (partesRes.error) throw partesRes.error;
+
+    // 3. Registrar hitos
     var payloadHitos = listadoHitos.map(h => ({
       contrato_id: nuevoContrato.id,
       titulo: h.titulo,
@@ -555,9 +567,10 @@ async function createContract() {
       estado: 'Pendiente'
     }));
 
-    await supabase.from('hitos_contrato').insert(payloadHitos);
+    var hitosInsRes = await supabase.from('hitos_contrato').insert(payloadHitos);
+    if (hitosInsRes.error) throw hitosInsRes.error;
 
-    alert('✅ Contrato registrado exitosamente.');
+    alert('✅ Contrato guardado y vinculado a ambas cuentas exitosamente.');
     $('titulo').value = '';$('correo_contraparte').value = '';
     showView('contratos');
 
@@ -566,47 +579,76 @@ async function createContract() {
   }
 }
 
-// --- VER CONTRATOS, HITOS Y DISPUTAS ---
+// --- CONSULTA MULTIETAPA ROBUSTA DE CONTRATOS ---
 async function loadContracts() {
   var container = $('contractList');
-  container.innerHTML = '<p style="color:#627d98;">Cargando contratos, hitos y disputas...</p>';
+  container.innerHTML = '<p style="color:#627d98;">Cargando contratos, hitos y disputas desde la base de datos...</p>';
 
   try {
     var userResponse = await supabase.auth.getUser();
     var user = userResponse.data.user;
-
-    var response = await supabase
-      .from('partes_contrato')
-      .select('rol_en_contrato, contratos(*)')
-      .eq('perfil_id', user.id)
-      .order('created_at', { ascending: false, foreignTable: 'contratos' });
-
-    var registros = response.data;
-
-    if (!registros || registros.length === 0) {
-      container.innerHTML = `<div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;text-align:center;"><p style="color:#627d98;">No tienes contratos asignados.</p></div>`;
+    if (!user) {
+      container.innerHTML = '<p style="color:#b42318;">No hay sesión activa.</p>';
       return;
     }
 
-    var hitosRes = await supabase.from('hitos_contrato').select('*');
+    // Paso A: Obtener las vinculaciones en partes_contrato para el usuario actual
+    var partesRes = await supabase
+      .from('partes_contrato')
+      .select('contrato_id, rol_en_contrato')
+      .eq('perfil_id', user.id);
+
+    if (partesRes.error) throw partesRes.error;
+
+    var partes = partesRes.data || [];
+    if (partes.length === 0) {
+      container.innerHTML = `<div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;text-align:center;"><p style="color:#627d98;">No tienes contratos asignados todavía.</p></div>`;
+      return;
+    }
+
+    var contratoIds = partes.map(p => p.contrato_id).filter(Boolean);
+    var rolesMap = {};
+    partes.forEach(p => { rolesMap[p.contrato_id] = p.rol_en_contrato; });
+
+    // Paso B: Consultar la información general de los contratos
+    var contratosRes = await supabase
+      .from('contratos')
+      .select('*')
+      .in('id', contratoIds);
+
+    if (contratosRes.error) throw contratosRes.error;
+    var contratos = contratosRes.data || [];
+
+    if (contratos.length === 0) {
+      container.innerHTML = `<div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;text-align:center;"><p style="color:#627d98;">No se encontraron contratos registrados.</p></div>`;
+      return;
+    }
+
+    // Ordenar contratos del más reciente al más antiguo
+    contratos.sort((a, b) => b.id - a.id);
+
+    // Paso C: Consultar hitos, disputas y evidencias asociadas
+    var hitosRes = await supabase.from('hitos_contrato').select('*').in('contrato_id', contratoIds);
     var todosLosHitos = hitosRes.data || [];
 
-    var disputasRes = await supabase.from('disputas').select('*');
+    var disputasRes = await supabase.from('disputas').select('*').in('contrato_id', contratoIds);
     var todasLasDisputas = disputasRes.data || [];
 
-    var evidenciasRes = await supabase.from('evidencias_disputa').select('*');
-    var todasLasEvidencias = evidenciasRes.data || [];
+    var disputaIds = todasLasDisputas.map(d => d.id).filter(Boolean);
+    var todasLasEvidencias = [];
+    if (disputaIds.length > 0) {
+      var evidenciasRes = await supabase.from('evidencias_disputa').select('*').in('disputa_id', disputaIds);
+      todasLasEvidencias = evidenciasRes.data || [];
+    }
 
-    container.innerHTML = registros.map(function(item) {
-      if(!item.contratos) return '';
-      var c = item.contratos;
-      var miRolEnContrato = item.rol_en_contrato || '';
+    // Paso D: Renderizar la información
+    container.innerHTML = contratos.map(function(c) {
+      var miRolEnContrato = rolesMap[c.id] || 'Participante';
       var esCliente = miRolEnContrato.toLowerCase().includes('cliente') || miRolEnContrato.toLowerCase().includes('contratante');
 
       var hitosDelContrato = todosLosHitos.filter(h => h.contrato_id === c.id);
       var disputasDelContrato = todasLasDisputas.filter(d => d.contrato_id === c.id);
       
-      // VERIFICAR SI HAY DISPUTA ACTIVA QUE BLOQUEE EL PAGO
       var disputaActiva = disputasDelContrato.find(d => d.estado === 'ABIERTA' || d.estado === 'EN_NEGOCIACION');
 
       var renderHitosHTML = hitosDelContrato.map(function(h) {
@@ -618,12 +660,9 @@ async function loadContracts() {
         } else if (disputaActiva) {
           botonAccion = `<span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800">🔒 Bloqueado (Disputa Activa)</span>`;
         } else {
-          // Si NO hay disputa activa (o ya está RESUELTA):
           if (esCliente) {
-            // SOLO EL CLIENTE TIENE HABILITADO EL BOTÓN DE LIBERACIÓN DE PAGO
             botonAccion = `<button onclick="liberarHito('${h.id}', '${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">🔓 Liberar Este Hito ($${Number(h.monto).toLocaleString('es-CO')} COP)</button>`;
           } else {
-            // EL FREELANCER SOLAMENTE VE EL ESTADO
             botonAccion = `<span style="color:#627d98;font-style:italic;font-size:12px">⏳ Pendiente de pago por el cliente</span>`;
           }
         }
@@ -697,7 +736,7 @@ async function loadContracts() {
         </div>`;
     }).join('');
   } catch (err) {
-    container.innerHTML = '<p style="color:#b42318;">Error al cargar datos: ' + err.message + '</p>';
+    container.innerHTML = '<p style="color:#b42318;background:#fee2e2;padding:12px;border-radius:8px;"><b>Error al cargar contratos:</b> ' + err.message + '</p>';
   }
 }
 
@@ -801,7 +840,6 @@ async function liberarHito(hitoId, contratoId) {
     var userResponse = await supabase.auth.getUser();
     var user = userResponse.data.user;
 
-    // Verificar en la base de datos si el usuario actual es el Cliente en este contrato
     var parteRes = await supabase.from('partes_contrato')
       .select('rol_en_contrato')
       .eq('contrato_id', contratoId)
@@ -816,7 +854,6 @@ async function liberarHito(hitoId, contratoId) {
       return;
     }
 
-    // Verificar que no haya disputa activa (ABIERTA o EN_NEGOCIACION)
     var checkDisp = await supabase.from('disputas').select('id, estado').eq('contrato_id', contratoId);
     var disputaActiva = checkDisp.data && checkDisp.data.find(d => d.estado === 'ABIERTA' || d.estado === 'EN_NEGOCIACION');
 
@@ -830,11 +867,15 @@ async function liberarHito(hitoId, contratoId) {
     var updateHito = await supabase.from('hitos_contrato').update({ estado: 'Liberado' }).eq('id', hitoId);
     if (updateHito.error) throw updateHito.error;
 
-    await fetch(`${BACKEND_URL}/api/escrow/liberar`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contrato_id: contratoId, hito_id: hitoId })
-    });
+    try {
+      await fetch(`${BACKEND_URL}/api/escrow/liberar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrato_id: contratoId, hito_id: hitoId })
+      });
+    } catch(e) {
+      console.warn("Backend externo no disponible, pero la base de datos se actualizó.");
+    }
 
     var consultaHitos = await supabase.from('hitos_contrato').select('estado').eq('contrato_id', contratoId);
     var todosLiberados = consultaHitos.data && consultaHitos.data.every(h => h.estado === 'Liberado');

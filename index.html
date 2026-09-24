@@ -257,30 +257,33 @@ async function createContract() {
   var objeto = $('objeto').value.trim();
   var valor = parseFloat($('valor').value);
   var forma_pago = $('forma_pago').value;
-  var correoContraparte = $('correo_contraparte').value.trim().toLowerCase();
+  
+  // Lectura segura por si el input aún no está en el HTML
+  var inputCorreo = $('correo_contraparte');
+  var correoContraparte = inputCorreo ? inputCorreo.value.trim().toLowerCase() : '';
 
   if (!titulo || !objeto || isNaN(valor)) { 
-    alert('Por favor completa todos los campos requeridos.'); 
+    alert('Por favor completa los campos requeridos (Título, Objeto y Valor).'); 
     return; 
   }
 
   try {
     var userResponse = await supabase.auth.getUser();
-    var user = userResponse.data.user;
+    var user = userResponse.data ? userResponse.data.user : null;
 
-    if (!user) throw new Error("No hay una sesión activa.");
+    if (!user) throw new Error("No hay una sesión activa. Vuelve a iniciar sesión.");
 
-    // 1. Obtener mi rol (Cliente o Freelancer)
+    // 1. Consultar mi rol
     var perfilRes = await supabase
       .from('perfiles_usuario')
       .select('rol')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    var miRol = perfilRes.data ? perfilRes.data.rol : 'Creador';
+    var miRol = (perfilRes.data && perfilRes.data.rol) ? perfilRes.data.rol : 'Freelancer';
     var rolContraparte = miRol.toLowerCase().includes('cliente') ? 'Freelancer' : 'Cliente';
 
-    // 2. Crear el registro del contrato
+    // 2. Insertar el contrato
     var response = await supabase.from('contratos').insert([
       {
         tipo: tipo,
@@ -292,52 +295,58 @@ async function createContract() {
       }
     ]).select();
 
-    if (response.error) throw response.error;
+    if (response.error) throw new Error("Error en tabla contratos: " + response.error.message);
     var nuevoContrato = response.data[0];
 
-    // 3. Vincularme a mí como creador en 'partes_contrato'
-    await supabase.from('partes_contrato').insert([
+    // 3. Vincular al creador en partes_contrato
+    var relRes = await supabase.from('partes_contrato').insert([
       {
         contrato_id: nuevoContrato.id,
         perfil_id: user.id,
         rol_en_contrato: miRol
       }
     ]);
+    if (relRes.error) throw new Error("Error vinculando creador: " + relRes.error.message);
 
-    // 4. Si ingresaste un correo de la contraparte, buscarlo y vincularlo
+    // 4. Intentar vincular a la contraparte por correo
     if (correoContraparte) {
-      var buscaContraparte = await supabase
-        .from('perfiles_usuario')
-        .select('id')
-        .eq('correo', correoContraparte)
-        .maybeSingle();
+      try {
+        var buscaContraparte = await supabase
+          .from('perfiles_usuario')
+          .select('id')
+          .eq('correo', correoContraparte)
+          .maybeSingle();
 
-      if (buscaContraparte.data) {
-        // Encontrado: lo vinculamos al contrato con el rol opuesto
-        await supabase.from('partes_contrato').insert([
-          {
-            contrato_id: nuevoContrato.id,
-            perfil_id: buscaContraparte.data.id,
-            rol_en_contrato: rolContraparte
-          }
-        ]);
-        alert('¡Contrato creado y vinculado exitosamente con ' + correoContraparte + '!');
-      } else {
-        alert('Contrato creado. Nota: El correo ' + correoContraparte + ' aún no está registrado. Cuando cree su cuenta con ese correo podrá ver el contrato.');
+        if (buscaContraparte.data) {
+          await supabase.from('partes_contrato').insert([
+            {
+              contrato_id: nuevoContrato.id,
+              perfil_id: buscaContraparte.data.id,
+              rol_en_contrato: rolContraparte
+            }
+          ]);
+          alert('¡Contrato creado y vinculado con ' + correoContraparte + '!');
+        } else {
+          alert('Contrato creado exitosamente. (Nota: El correo ' + correoContraparte + ' aún no tiene cuenta).');
+        }
+      } catch (e) {
+        console.warn("No se pudo vincular la contraparte:", e);
+        alert('Contrato guardado correctamente.');
       }
     } else {
-      alert('¡Contrato creado correctamente!');
+      alert('¡Contrato guardado correctamente!');
     }
 
-    // Limpiar formulario y redireccionar
+    // Limpiar formulario y navegar
     $('titulo').value = '';
     $('objeto').value = '';
     $('valor').value = '';
-    $('correo_contraparte').value = '';
+    if (inputCorreo) inputCorreo.value = '';
     showView('contratos');
 
   } catch (err) {
-    alert('Error al guardar el contrato: ' + err.message);
+    console.error(err);
+    alert('Error al guardar: ' + err.message);
   }
 }
 

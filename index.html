@@ -162,8 +162,8 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
             </div>
 
             <div style="grid-column:1/-1">
-              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Correo electrónico de la otra parte</label>
-              <input id="correo_contraparte" type="email" placeholder="cliente_o_freelancer@gmail.com" required style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Correo electrónico de la otra parte (Freelancer o Cliente)</label>
+              <input id="correo_contraparte" type="email" placeholder="contraparte@ejemplo.com" required style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
             </div>
           </div>
 
@@ -318,6 +318,20 @@ var PLANTILLAS_HITOS = {
 
 var listadoHitos = [];
 
+// --- SINCRONIZACIÓN AUTOMÁTICA DEL PERFIL DE USUARIO ---
+async function syncPerfilUsuario(user) {
+  if (!user) return;
+  var nombre = (user.user_metadata && user.user_metadata.nombre) ? user.user_metadata.nombre : user.email.split('@')[0];
+  var rol = (user.user_metadata && user.user_metadata.rol) ? user.user_metadata.rol : 'Freelancer';
+  
+  await supabase.from('perfiles_usuario').upsert({
+    id: user.id,
+    correo: user.email.toLowerCase(),
+    nombre: nombre,
+    rol: rol
+  });
+}
+
 function cargarHitosSegunModulo(moduloKey) {
   var base = PLANTILLAS_HITOS[moduloKey] || PLANTILLAS_HITOS.servicios;
   listadoHitos = JSON.parse(JSON.stringify(base));
@@ -440,7 +454,7 @@ function showView(view) {
   if (view === 'contratos') loadContracts();
 }
 
-// --- AUTENTICACIÓN ---
+// --- AUTENTICACIÓN Y REGISTRO ---
 $('loginForm').addEventListener('submit', async function(e) {   e.preventDefault();$('authError').style.display = 'none';
   try {
     var result = await supabase.auth.signInWithPassword({
@@ -448,6 +462,7 @@ $('loginForm').addEventListener('submit', async function(e) {   e.preventDefault
       password: $('loginPassword').value
     });
     if (result.error) throw result.error;
+    await syncPerfilUsuario(result.data.user);
     checkSession();
   } catch (err) {
     $('authError').textContent = err.message;
@@ -463,7 +478,12 @@ $('registerForm').addEventListener('submit', async function(e) {   e.preventDefa
       options: { data: { nombre: $('regNombre').value.trim(), rol:$('regRol').value } }
     });
     if (result.error) throw result.error;
-    alert('Registro exitoso. Inicia sesión.');
+
+    if (result.data.user) {
+      await syncPerfilUsuario(result.data.user);
+    }
+
+    alert('✅ Cuenta creada exitosamente. Ya puedes iniciar sesión.');
     showLogin();
   } catch (err) {
     $('authError').textContent = err.message;
@@ -476,7 +496,7 @@ async function handleLogout() {
   $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
 }
 
-// --- CREAR CONTRATO ---
+// --- CREAR CONTRATO (SOPORTA FREELANCER Y CLIENTE) ---
 async function createContract() {
   var titulo = $('titulo').value.trim();
   var objeto = $('objeto').value.trim();
@@ -485,7 +505,7 @@ async function createContract() {
   var valorTotal = listadoHitos.reduce((acc, h) => acc + (Number(h.monto) || 0), 0);
 
   if (!titulo || !objeto || valorTotal <= 0 || !correoContraparte) { 
-    alert('Por favor completa el título, correo de la otra parte y verifica los hitos.'); 
+    alert('Por favor completa el título, el correo de la otra parte y los hitos.'); 
     return; 
   }
 
@@ -494,17 +514,21 @@ async function createContract() {
     var user = userResponse.data.user;
     if (!user) throw new Error("Sesión caducada.");
 
-    var buscaContraparte = await supabase.from('perfiles_usuario').select('id').eq('correo', correoContraparte).maybeSingle();
+    await syncPerfilUsuario(user);
+
+    // Buscar si la contraparte existe registrada en perfiles_usuario
+    var buscaContraparte = await supabase.from('perfiles_usuario').select('id, rol').eq('correo', correoContraparte).maybeSingle();
 
     if (!buscaContraparte.data) {
-      alert('❌ El correo "' + correoContraparte + '" no está registrado.');
+      alert('❌ El correo "' + correoContraparte + '" no se encuentra registrado en la plataforma. Pídele que cree su cuenta primero.');
       return;
     }
 
-    var perfilRes = await supabase.from('perfiles_usuario').select('rol').eq('id', user.id).single();
-    var miRol = perfilRes.data ? perfilRes.data.rol : 'Freelancer';
-    var esCliente = miRol.toLowerCase().includes('cliente') || miRol.toLowerCase().includes('contratante');
-    var rolContraparte = esCliente ? 'Freelancer' : 'Cliente / Contratante';
+    var miPerfilRes = await supabase.from('perfiles_usuario').select('rol').eq('id', user.id).single();
+    var miRol = (miPerfilRes.data && miPerfilRes.data.rol) ? miPerfilRes.data.rol : 'Freelancer';
+    
+    var esMiRolCliente = miRol.toLowerCase().includes('cliente') || miRol.toLowerCase().includes('contratante');
+    var rolContraparte = buscaContraparte.data.rol || (esMiRolCliente ? 'Freelancer' : 'Cliente o Contratante');
 
     var response = await supabase.from('contratos').insert([{
       tipo: tipoModulo,
@@ -518,6 +542,7 @@ async function createContract() {
     if (response.error) throw response.error;
     var nuevoContrato = response.data[0];
 
+    // Registrar los dos roles formalmente en partes_contrato
     await supabase.from('partes_contrato').insert([
       { contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol },
       { contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte }
@@ -532,7 +557,7 @@ async function createContract() {
 
     await supabase.from('hitos_contrato').insert(payloadHitos);
 
-    alert('✅ Contrato e hitos registrados con éxito.');
+    alert('✅ Contrato registrado exitosamente.');
     $('titulo').value = '';$('correo_contraparte').value = '';
     showView('contratos');
 
@@ -593,12 +618,12 @@ async function loadContracts() {
         } else if (disputaActiva) {
           botonAccion = `<span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800">🔒 Bloqueado (Disputa Activa)</span>`;
         } else {
-          // Si no hay disputa activa (o la disputa ya fue RESUELTA):
+          // Si NO hay disputa activa (o ya está RESUELTA):
           if (esCliente) {
-            // SOLO EL CLIENTE TIENE EL BOTÓN DE LIBERACIÓN DE PAGO
+            // SOLO EL CLIENTE TIENE HABILITADO EL BOTÓN DE LIBERACIÓN DE PAGO
             botonAccion = `<button onclick="liberarHito('${h.id}', '${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">🔓 Liberar Este Hito ($${Number(h.monto).toLocaleString('es-CO')} COP)</button>`;
           } else {
-            // EL FREELANCER SOLAMENTE VE EL ESTADO EN ESPERA DEL DESEMBOLSO
+            // EL FREELANCER SOLAMENTE VE EL ESTADO
             botonAccion = `<span style="color:#627d98;font-style:italic;font-size:12px">⏳ Pendiente de pago por el cliente</span>`;
           }
         }
@@ -654,7 +679,7 @@ async function loadContracts() {
             <span style="background:#e9fbf1;color:#087c38;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;">Total: $${Number(c.valor || 0).toLocaleString('es-CO')} COP</span>
           </div>
           <div style="font-size:12px;color:#627d98;margin-bottom:12px;">
-            <span>Rol: <b>${miRolEnContrato}</b></span> | <span>Estado: <b>${c.estado}</b></span>
+            <span>Rol en el contrato: <b>${miRolEnContrato}</b></span> | <span>Estado: <b>${c.estado}</b></span>
           </div>
 
           <div style="background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;margin-top:10px">
@@ -753,7 +778,7 @@ async function guardarDisputa() {
 }
 
 async function aceptarSolucionDisputa(disputaId) {
-  if (!confirm('¿Aceptas la propuesta de solución? Al aceptar, la disputa se marcará como RESUELTA y el cliente podrá proceder con la liberación de pagos.')) return;
+  if (!confirm('¿Aceptas la propuesta de solución? Al aceptar, la disputa se marcará como RESUELTA y se habilitará nuevamente el pago de los hitos.')) return;
 
   try {
     var res = await supabase.from('disputas').update({
@@ -770,13 +795,13 @@ async function aceptarSolucionDisputa(disputaId) {
   }
 }
 
-// --- LIBERAR HITO CON VERIFICACIÓN ESTRICTA DE ROL Y DISPUTA ---
+// --- LIBERAR HITO CON VERIFICACIÓN DE ROL Y DISPUTAS ---
 async function liberarHito(hitoId, contratoId) {
   try {
     var userResponse = await supabase.auth.getUser();
     var user = userResponse.data.user;
 
-    // 1. Verificar en base de datos si el usuario actual es efectivamente el Cliente
+    // Verificar en la base de datos si el usuario actual es el Cliente en este contrato
     var parteRes = await supabase.from('partes_contrato')
       .select('rol_en_contrato')
       .eq('contrato_id', contratoId)
@@ -791,7 +816,7 @@ async function liberarHito(hitoId, contratoId) {
       return;
     }
 
-    // 2. Verificar que no exista disputa activa
+    // Verificar que no haya disputa activa (ABIERTA o EN_NEGOCIACION)
     var checkDisp = await supabase.from('disputas').select('id, estado').eq('contrato_id', contratoId);
     var disputaActiva = checkDisp.data && checkDisp.data.find(d => d.estado === 'ABIERTA' || d.estado === 'EN_NEGOCIACION');
 
@@ -836,6 +861,7 @@ async function checkSession() {
   var sessionResponse = await supabase.auth.getSession();
   if (sessionResponse.data && sessionResponse.data.session) {
     var user = sessionResponse.data.session.user;
+    await syncPerfilUsuario(user);
     $('sessionBadge').textContent = '● ' + (user.user_metadata.nombre || user.email);
     $('authScreen').style.display = 'none';$('appRoot').classList.add('active');
     showView('inicio');

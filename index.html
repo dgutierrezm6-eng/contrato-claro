@@ -414,7 +414,22 @@ Las partes acuerdan que cualquier diferencia o desacuerdo será gestionado inici
 
 De no alcanzarse un acuerdo mutuo expreso, la controversia se someterá al mecanismo de ${mecanismo.toUpperCase()}, conforme a la legislación colombiana aplicable.`;
 
-  return clausulasEspecificas + clausulaDisputas;
+  var clausulasRestantes = `
+
+CUARTA – PROPIEDAD INTELECTUAL:
+Toda la propiedad intelectual, derechos patrimoniales y archivos finales derivados de los entregables serán de titularidad exclusiva del CONTRATANTE una vez se realice la liberación de los pagos.
+
+QUINTA – CONFIDENCIALIDAD:
+Ambas partes mantendrán estricta reserva sobre la información técnica, comercial o privada intercambiada durante la ejecución de este acuerdo.
+
+SEXTA – CUSTODIA DE FONDOS (ESCROW):
+Los pagos serán depositados bajo custodia en la plataforma y se liberarán progresivamente al CONTRATISTA a medida que el CONTRATANTE apruebe la entrega de cada hito.
+
+SEPTIMA – PROCEDIMIENTO Y SOLUCIÓN DE DISPUTAS:
+Ante cualquier inconformidad con los entregables, las partes iniciarán un proceso de NEGOCIACIÓN DIRECTA registrado en la plataforma por un plazo máximo de ${dias} días hábiles. Durante este tiempo los fondos retenidos permanecerán congelados. En caso de no llegar a un acuerdo, la disputa se elevará a un mecanismo de ${mecanismo.toUpperCase()} conforme a la ley.`;
+
+  
+  return clausulasEspecificas + clausulaDisputas + clausulasRestantes;
 }
 
 function actualizarClausulasPorModulo() {

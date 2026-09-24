@@ -129,18 +129,25 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
       </section>
 
       <section id="view-crear" style="display:none">
-        <h2 style="margin-bottom:20px">Crear contrato</h2>
-        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px">
-            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Tipo</label><select id="tipo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Prestación de Servicios</option><option>Obra/Proyecto</option><option>Consultoría</option></select></div>
-            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título</label><input id="titulo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
-            <div style="grid-column:1/-1"><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Objeto</label><textarea id="objeto" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;min-height:88px"></textarea></div>
-            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Valor (COP)</label><input id="valor" type="number" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
-            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Pago</label><select id="forma_pago" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Por Hitos</option><option>Pago Único</option><option>50/50</option></select></div>
-          </div>
-          <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:20px">Guardar contrato</button>
-        </div>
-      </section>
+  <h2 style="margin-bottom:20px">Crear contrato</h2>
+  <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px">
+      <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Tipo</label><select id="tipo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Prestación de Servicios</option><option>Obra/Proyecto</option><option>Consultoría</option></select></div>
+      <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título</label><input id="titulo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
+      
+      <!-- CAMPO DE CORREO DE LA OTRA PARTE OBLIGATORIO -->
+      <div style="grid-column:1/-1">
+        <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Correo de la otra parte (Debe estar registrado)</label>
+        <input id="correo_contraparte" type="email" placeholder="correo_del_cliente_o_freelancer@gmail.com" required style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+      </div>
+
+      <div style="grid-column:1/-1"><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Objeto</label><textarea id="objeto" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;min-height:88px"></textarea></div>
+      <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Valor (COP)</label><input id="valor" type="number" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
+      <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Pago</label><select id="forma_pago" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Por Hitos</option><option>Pago Único</option><option>50/50</option></select></div>
+    </div>
+    <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:20px">Guardar contrato</button>
+  </div>
+</section>
 
       <section id="view-contratos" style="display:none">
         <h2 style="margin-bottom:20px">Mis contratos</h2>
@@ -257,86 +264,128 @@ async function createContract() {
   var objeto = $('objeto').value.trim();
   var valor = parseFloat($('valor').value);
   var forma_pago = $('forma_pago').value;
-  
-  // Lectura segura por si el input aún no está en el HTML
-  var inputCorreo = $('correo_contraparte');
-  var correoContraparte = inputCorreo ? inputCorreo.value.trim().toLowerCase() : '';
+  var correoContraparte = $('correo_contraparte').value.trim().toLowerCase();
 
-  if (!titulo || !objeto || isNaN(valor)) { 
-    alert('Por favor completa los campos requeridos (Título, Objeto y Valor).'); 
+  if (!titulo || !objeto || isNaN(valor) || !correoContraparte) { 
+    alert('Por favor completa todos los campos, incluyendo el correo de la otra parte.'); 
     return; 
   }
 
   try {
     var userResponse = await supabase.auth.getUser();
-    var user = userResponse.data ? userResponse.data.user : null;
+    var user = userResponse.data.user;
+    if (!user) throw new Error("No hay una sesión activa.");
 
-    if (!user) throw new Error("No hay una sesión activa. Vuelve a iniciar sesión.");
-
-    // 1. Consultar mi rol
-    var perfilRes = await supabase
+    // 1. Verificar PRIMERO si la otra persona existe en la plataforma
+    var buscaContraparte = await supabase
       .from('perfiles_usuario')
-      .select('rol')
-      .eq('id', user.id)
+      .select('id')
+      .eq('correo', correoContraparte)
       .maybeSingle();
 
-    var miRol = (perfilRes.data && perfilRes.data.rol) ? perfilRes.data.rol : 'Freelancer';
-    var rolContraparte = miRol.toLowerCase().includes('cliente') ? 'Freelancer' : 'Cliente';
-
-    // 2. Insertar el contrato
-    var response = await supabase.from('contratos').insert([
-      {
-        tipo: tipo,
-        titulo: titulo,
-        objeto: objeto,
-        valor: valor,
-        forma_pago: forma_pago,
-        estado: 'Pendiente'
-      }
-    ]).select();
-
-    if (response.error) throw new Error("Error en tabla contratos: " + response.error.message);
-    var nuevoContrato = response.data[0];
-
-    // 3. Vincular al creador en partes_contrato
-    var relRes = await supabase.from('partes_contrato').insert([
-      {
-        contrato_id: nuevoContrato.id,
-        perfil_id: user.id,
-        rol_en_contrato: miRol
-      }
-    ]);
-    if (relRes.error) throw new Error("Error vinculando creador: " + relRes.error.message);
-
-    // 4. Intentar vincular a la contraparte por correo
-    if (correoContraparte) {
-      try {
-        var buscaContraparte = await supabase
-          .from('perfiles_usuario')
-          .select('id')
-          .eq('correo', correoContraparte)
-          .maybeSingle();
-
-        if (buscaContraparte.data) {
-          await supabase.from('partes_contrato').insert([
-            {
-              contrato_id: nuevoContrato.id,
-              perfil_id: buscaContraparte.data.id,
-              rol_en_contrato: rolContraparte
-            }
-          ]);
-          alert('¡Contrato creado y vinculado con ' + correoContraparte + '!');
-        } else {
-          alert('Contrato creado exitosamente. (Nota: El correo ' + correoContraparte + ' aún no tiene cuenta).');
-        }
-      } catch (e) {
-        console.warn("No se pudo vincular la contraparte:", e);
-        alert('Contrato guardado correctamente.');
-      }
-    } else {
-      alert('¡Contrato guardado correctamente!');
+    if (!buscaContraparte.data) {
+      alert('❌ ERROR: El correo ' + correoContraparte + ' no está registrado en la plataforma. Dile a esa persona que cree su cuenta primero.');
+      return; // Detenemos la creación del contrato
     }
 
+    // 2. Si existe, obtenemos mi rol
+    var perfilRes = await supabase.from('perfiles_usuario').select('rol').eq('id', user.id).single();
+    var miRol = perfilRes.data ? perfilRes.data.rol : 'Freelancer';
+    var rolContraparte = miRol.toLowerCase().includes('cliente') ? 'Freelancer' : 'Cliente';
+
+    // 3. Crear el contrato
+    var response = await supabase.from('contratos').insert([{
+      tipo: tipo, titulo: titulo, objeto: objeto, valor: valor, forma_pago: forma_pago, estado: 'Activo (Fondeado)'
+    }]).select();
+
+    if (response.error) throw response.error;
+    var nuevoContrato = response.data[0];
+
+    // 4. Vincularme a mí
+    await supabase.from('partes_contrato').insert([{
+      contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol
+    }]);
+
+    // 5. Vincular a la otra persona automáticamente
+    await supabase.from('partes_contrato').insert([{
+      contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte
+    }]);
+
+    alert('✅ ¡Contrato creado y vinculado exitosamente con ' + correoContraparte + '!');
+    
+    // Limpiar formulario y redireccionar
+    $('titulo').value = '';$('objeto').value = ''; $('valor').value = '';$('correo_contraparte').value = '';
+    showView('contratos');
+
+  } catch (err) {
+    alert('Error al guardar el contrato: ' + err.message);
+  }
+}
+
+async function loadContracts() {
+  var container = $('contractList');
+  container.innerHTML = '<p style="color:#627d98;">Cargando tus contratos...</p>';
+
+  try {
+    var userResponse = await supabase.auth.getUser();
+    var user = userResponse.data.user;
+
+    var response = await supabase
+      .from('partes_contrato')
+      .select('rol_en_contrato, contratos(*)')
+      .eq('perfil_id', user.id)
+      .order('created_at', { ascending: false, foreignTable: 'contratos' });
+
+    var registros = response.data;
+
+    if (!registros || registros.length === 0) {
+      container.innerHTML = `<div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;text-align:center;"><p style="color:#627d98;">No tienes contratos asignados.</p></div>`;
+      return;
+    }
+
+    container.innerHTML = registros.map(function(item) {
+      if(!item.contratos) return ''; // Prevenir errores si hay datos nulos
+      var c = item.contratos;
+      var miRolEnContrato = item.rol_en_contrato;
+      var esCliente = miRolEnContrato && miRolEnContrato.toLowerCase().includes('cliente');
+      var accionEscrow = '';
+
+      // Mostrar diferentes botones/textos dependiendo de si ya se pagó o no
+      if (c.estado === 'Finalizado') {
+        if (esCliente) {
+          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">✅ Dinero entregado al freelancer</span>`;
+        } else {
+          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">🎉 Pago recibido en tu cuenta</span>`;
+        }
+      } else {
+        if (esCliente) {
+          accionEscrow = `<button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">🔓 Liberar Fondos al Freelancer</button>`;
+        } else {
+          accionEscrow = `<span style="background:#f0f4f8;color:#627d98;padding:8px 12px;border-radius:6px;font-size:13px;font-style:italic;">⏳ Esperando que el cliente libere el pago</span>`;
+        }
+      }
+
+      return `
+        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h3 style="margin:0;font-size:16px;">${c.titulo}</h3>
+            <span style="background:#e9fbf1;color:#087c38;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:800;">$${Number(c.valor || 0).toLocaleString('es-CO')}</span>
+          </div>
+          <p style="font-size:13px;color:#486581;margin-bottom:10px;">${c.objeto}</p>
+          <div style="display:flex;gap:12px;font-size:12px;color:#627d98;margin-bottom:12px;flex-wrap:wrap;">
+            <span>Rol: <b>${miRolEnContrato}</b></span> |
+            <span>Estado: <b>${c.estado}</b></span>
+          </div>
+          <div style="border-top:1px solid #f0f4f8;padding-top:15px;margin-top:10px;">
+            ${accionEscrow}
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (err) {
+    container.innerHTML = '<p style="color:#b42318;">Error al cargar contratos: ' + err.message + '</p>';
+  }
+}
     // Limpiar formulario y navegar
     $('titulo').value = '';
     $('objeto').value = '';
@@ -351,74 +400,6 @@ async function createContract() {
 }
 
 // 2. Cargar Contratos desde la tabla 'contratos'
-async function loadContracts() {
-  var container = $('contractList');
-  container.innerHTML = '<p style="color:#627d98;">Cargando tus contratos...</p>';
-
-  try {
-    var userResponse = await supabase.auth.getUser();
-    var user = userResponse.data.user;
-
-    if (!user) throw new Error("No hay sesión activa.");
-
-    // Traer solo las relaciones en partes_contrato que pertenecen al usuario activo
-    var response = await supabase
-      .from('partes_contrato')
-      .select('rol_en_contrato, contratos(*)')
-      .eq('perfil_id', user.id);
-
-    if (response.error) throw response.error;
-
-    var registros = response.data;
-
-    if (!registros || registros.length === 0) {
-      container.innerHTML = `
-        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;text-align:center;">
-          <p style="color:#627d98;">No tienes contratos asignados.</p>
-        </div>`;
-      return;
-    }
-
-    container.innerHTML = registros.map(function(item) {
-      var c = item.contratos;
-      var miRolEnContrato = item.rol_en_contrato;
-
-      // Condición: Solo el cliente/contratante puede liberar fondos
-      var esCliente = miRolEnContrato && miRolEnContrato.toLowerCase().includes('cliente');
-
-      var accionEscrow = esCliente
-        ? `<button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">
-             🔓 Liberar Fondos
-           </button>`
-        : `<span style="font-size:12px;color:#627d98;font-style:italic;background:#f0f4f8;padding:6px 10px;border-radius:6px;display:inline-block;">
-             ⏳ Fondos en custodia (esperando aprobación del Cliente)
-           </span>`;
-
-      return `
-        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px;margin-bottom:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <h3 style="margin:0;font-size:16px;">${c.titulo}</h3>
-            <span style="background:#e9fbf1;color:#087c38;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:800;">
-              $${Number(c.valor || 0).toLocaleString('es-CO')}
-            </span>
-          </div>
-          <p style="font-size:13px;color:#486581;margin-bottom:10px;">${c.objeto}</p>
-          <div style="display:flex;gap:12px;font-size:12px;color:#627d98;margin-bottom:12px;flex-wrap:wrap;">
-            <span>Tipo: <b>${c.tipo}</b></span>
-            <span>Pago: <b>${c.forma_pago}</b></span>
-            <span>Estado: <b>${c.estado}</b></span>
-            <span>Tu rol: <b>${miRolEnContrato}</b></span>
-          </div>
-          <div style="border-top:1px solid #f0f4f8;padding-top:10px;margin-top:10px;">
-            ${accionEscrow}
-          </div>
-        </div>`;
-    }).join('');
-
-  } catch (err) {
-    container.innerHTML = '<p style="color:#b42318;">Error al cargar contratos: ' + err.message + '</p>';
-  }
-}
 
 // 3. Liberar Fondos vía Backend (Render)
 async function liberarEscrow(contratoId) {

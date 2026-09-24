@@ -693,7 +693,8 @@ async function generarHashSHA256(texto) {
 }
 
 async function guardarDisputa() {
-  var contratoId = $('disputaContratoId').value;
+  var contratoIdRaw = $('disputaContratoId').value;
+  var contratoId = parseInt(contratoIdRaw, 10); // Convierte a número entero (BIGINT)
   var motivo = $('dispMotivo').value;
   var descripcion = $('dispDescripcion').value.trim();
   var monto = $('dispMonto').value;
@@ -701,6 +702,11 @@ async function guardarDisputa() {
 
   var evNombre = $('evidenciaNombre').value.trim();
   var evUrl = $('evidenciaUrl').value.trim();
+
+  if (!contratoId || isNaN(contratoId)) {
+    alert('Error: No se encontró un ID de contrato válido. Recarga la página.');
+    return;
+  }
 
   if (!descripcion) {
     alert('Ingresa una descripción del conflicto.');
@@ -711,7 +717,7 @@ async function guardarDisputa() {
     var userResponse = await supabase.auth.getUser();
     var user = userResponse.data.user;
 
-    // 1. Guardar la Disputa
+    // 1. Guardar la Disputa con el ID numérico correcto
     var dispRes = await supabase.from('disputas').insert([{
       contrato_id: contratoId,
       iniciador_id: user.id,

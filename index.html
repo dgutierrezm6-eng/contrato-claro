@@ -31,7 +31,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- LOGIN / REGISTRO -->
 <div id="authScreen" class="auth-container">
   <div class="auth-card">
     <div class="auth-brand"><div class="logo"></div>Contrato Claro</div>
@@ -85,7 +85,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
   </div>
 </div>
 
-<!-- APP -->
+<!-- APLICACIÓN PRINCIPAL -->
 <div id="appRoot" class="app">
   <div style="background:#fff;padding:15px 28px;border-bottom:1px solid #d9e2ec;display:flex;justify-content:space-between;align-items:center">
     <div style="font-weight:800;font-size:20px;display:flex;align-items:center;gap:10px"><div class="logo"></div>Contrato Claro</div>
@@ -160,7 +160,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 </div>
 
 <script>
-// Configuración de Supabase (reemplaza con tus llaves reales)
+// --- CONFIGURACIÓN DE SUPABASE Y BACKEND ---
 var SUPABASE_URL = 'https://gftdhhvsjpojxkdyuvpl.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmdGRoaHZzanBvanhrZHl1dnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNDQ5NjQsImV4cCI6MjEwNDYyMDk2NH0.Y5T1C7yJGOWP7Je55qOPY_3oOyvtOLFnGRWZN3nm0wA';
 var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -171,7 +171,7 @@ var currentProfile = null;
 
 function $(id) { return document.getElementById(id); }
 
-// --- CONTROL DE VISTAS Y TABS ---
+// --- VISTAS Y TABS ---
 function showLogin() {
   $('tabLoginBtn').classList.add('active');
   $('tabRegisterBtn').classList.remove('active');$('loginForm').classList.add('active');
@@ -234,7 +234,7 @@ $('registerForm').addEventListener('submit', async function(e) {   e.preventDefa
 
     if (result.error) throw result.error;
     
-    alert('Registro exitoso. Revisa tu correo para confirmar la cuenta o inicia sesión.');
+    alert('Registro exitoso. Revisa tu correo para confirmar la cuenta e inicia sesión.');
     showLogin();
   } catch (err) {
     $('authError').textContent = err.message;
@@ -248,9 +248,9 @@ async function handleLogout() {
   $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
 }
 
-// --- OPERACIONES EN LA BASE DE DATOS ---
+// --- OPERACIONES EN BASE DE DATOS (ESQUEMA EN ESPAÑOL) ---
 
-// 1. Guardar Contrato en tabla 'CONTRATOS'
+// 1. Guardar Contrato y vincular en PARTES_CONTRATO
 async function createContract() {
   var tipo = $('tipo').value;
   var titulo = $('titulo').value.trim();
@@ -264,16 +264,14 @@ async function createContract() {
   }
 
   try {
-    // 1. Obtener la información del usuario autenticado
     var userResponse = await supabase.auth.getUser();
     var user = userResponse.data.user;
 
     if (!user) throw new Error("No hay una sesión activa.");
 
-    // 2. Insertar vinculando al creador
-    var response = await supabase.from('CONTRATOS').insert([
+    // Guardar en la tabla 'contratos'
+    var response = await supabase.from('contratos').insert([
       {
-        user_id: user.id, // <-- IMPORTANTE: Asocia el contrato al usuario
         tipo: tipo,
         titulo: titulo,
         objeto: objeto,
@@ -285,10 +283,22 @@ async function createContract() {
 
     if (response.error) throw response.error;
 
-    alert('¡Contrato creado correctamente!');
+    var nuevoContrato = response.data[0];
+
+    // Registrar relación en 'partes_contrato'
+    var relacionResponse = await supabase.from('partes_contrato').insert([
+      {
+        contrato_id: nuevoContrato.id,
+        perfil_id: user.id,
+        rol_en_contrato: 'Creador'
+      }
+    ]);
+
+    if (relacionResponse.error) throw relacionResponse.error;
+
+    alert('¡Contrato creado y vinculado correctamente!');
     $('titulo').value = '';
-    $('objeto').value = '';
-    $('valor').value = '';
+    $('objeto').value = '';$('valor').value = '';
     showView('contratos');
 
   } catch (err) {
@@ -296,15 +306,14 @@ async function createContract() {
   }
 }
 
-// 2. Leer Contratos desde Supabase
-// 2. Leer Contratos desde Supabase
+// 2. Cargar Contratos desde la tabla 'contratos'
 async function loadContracts() {
   var container = $('contractList');
   container.innerHTML = '<p style="color:#627d98;">Cargando contratos...</p>';
 
   try {
     var response = await supabase
-      .from('CONTRATOS')
+      .from('contratos')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -335,8 +344,6 @@ async function loadContracts() {
             <span>Pago: <b>${c.forma_pago}</b></span>
             <span>Estado: <b>${c.estado}</b></span>
           </div>
-
-          <!-- BOTÓN PARA LIBERAR FONDOS -->
           <div style="border-top:1px solid #f0f4f8;padding-top:10px;margin-top:10px;">
             <button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">
               🔓 Liberar Fondos
@@ -350,8 +357,7 @@ async function loadContracts() {
   }
 }
 
-
-// --- LLAMADA AL BACKEND EN RENDER PARA LIBERAR ESCROW ---
+// 3. Liberar Fondos vía Backend (Render)
 async function liberarEscrow(contratoId) {
   if (!confirm('¿Estás seguro de que deseas liberar los fondos en custodia para este contrato?')) {
     return;
@@ -373,7 +379,7 @@ async function liberarEscrow(contratoId) {
     }
 
     alert('¡Fondos liberados exitosamente!');
-    loadContracts(); // Recargar la lista de contratos para actualizar el estado
+    loadContracts();
   } catch (err) {
     alert('Error en el servidor: ' + err.message);
   }

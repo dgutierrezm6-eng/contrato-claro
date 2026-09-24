@@ -273,7 +273,7 @@ async function createContract() {
     // 2. Insertar vinculando al creador
     var response = await supabase.from('CONTRATOS').insert([
       {
-        creador_id: user.id, // <-- IMPORTANTE: Asocia el contrato al usuario
+        user_id: user.id // <-- IMPORTANTE: Asocia el contrato al usuario
         tipo: tipo,
         titulo: titulo,
         objeto: objeto,

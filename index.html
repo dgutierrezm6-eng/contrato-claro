@@ -257,6 +257,7 @@ async function createContract() {
   var objeto = $('objeto').value.trim();
   var valor = parseFloat($('valor').value);
   var forma_pago = $('forma_pago').value;
+  var correoContraparte = $('correo_contraparte').value.trim().toLowerCase();
 
   if (!titulo || !objeto || isNaN(valor)) { 
     alert('Por favor completa todos los campos requeridos.'); 
@@ -269,7 +270,7 @@ async function createContract() {
 
     if (!user) throw new Error("No hay una sesión activa.");
 
-    // 1. Consultar el perfil del usuario para conocer su rol (Cliente o Freelancer)
+    // 1. Obtener mi rol (Cliente o Freelancer)
     var perfilRes = await supabase
       .from('perfiles_usuario')
       .select('rol')
@@ -277,8 +278,9 @@ async function createContract() {
       .single();
 
     var miRol = perfilRes.data ? perfilRes.data.rol : 'Creador';
+    var rolContraparte = miRol.toLowerCase().includes('cliente') ? 'Freelancer' : 'Cliente';
 
-    // 2. Guardar en la tabla 'contratos'
+    // 2. Crear el registro del contrato
     var response = await supabase.from('contratos').insert([
       {
         tipo: tipo,
@@ -291,11 +293,10 @@ async function createContract() {
     ]).select();
 
     if (response.error) throw response.error;
-
     var nuevoContrato = response.data[0];
 
-    // 3. Vincular usuario con su rol exacto en 'partes_contrato'
-    var relacionResponse = await supabase.from('partes_contrato').insert([
+    // 3. Vincularme a mí como creador en 'partes_contrato'
+    await supabase.from('partes_contrato').insert([
       {
         contrato_id: nuevoContrato.id,
         perfil_id: user.id,
@@ -303,12 +304,36 @@ async function createContract() {
       }
     ]);
 
-    if (relacionResponse.error) throw relacionResponse.error;
+    // 4. Si ingresaste un correo de la contraparte, buscarlo y vincularlo
+    if (correoContraparte) {
+      var buscaContraparte = await supabase
+        .from('perfiles_usuario')
+        .select('id')
+        .eq('correo', correoContraparte)
+        .maybeSingle();
 
-    alert('¡Contrato creado correctamente!');
+      if (buscaContraparte.data) {
+        // Encontrado: lo vinculamos al contrato con el rol opuesto
+        await supabase.from('partes_contrato').insert([
+          {
+            contrato_id: nuevoContrato.id,
+            perfil_id: buscaContraparte.data.id,
+            rol_en_contrato: rolContraparte
+          }
+        ]);
+        alert('¡Contrato creado y vinculado exitosamente con ' + correoContraparte + '!');
+      } else {
+        alert('Contrato creado. Nota: El correo ' + correoContraparte + ' aún no está registrado. Cuando cree su cuenta con ese correo podrá ver el contrato.');
+      }
+    } else {
+      alert('¡Contrato creado correctamente!');
+    }
+
+    // Limpiar formulario y redireccionar
     $('titulo').value = '';
     $('objeto').value = '';
     $('valor').value = '';
+    $('correo_contraparte').value = '';
     showView('contratos');
 
   } catch (err) {

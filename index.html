@@ -13,13 +13,12 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 .auth-brand{font-weight:800;font-size:20px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
 .logo{width:32px;height:32px;background:#0b2545;border-radius:8px;position:relative}
 .logo:after{content:"✓";position:absolute;color:#fff;font-weight:900;font-size:20px;left:7px;top:-2px}
-.auth-tabs{display:flex;gap:6px;background:#f0f4f8;border-radius:9px;padding:4px;margin:18px 0}
+.auth-tabs{display:flex;gap:6px;background:#f0f4f8;border-radius:99px;padding:4px;margin:18px 0}
 .auth-tabs button{flex:1;border:0;background:transparent;padding:9px;border-radius:7px;font-weight:800;color:#627d98;cursor:pointer}
 .auth-tabs button.active{background:#fff;color:#087f80;box-shadow:0 2px 6px rgba(16,42,67,0.08)}
 .auth-field{margin-bottom:13px}
 .auth-field label{display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#334e68}
 .auth-field input,.auth-field select{width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;font-size:14px}
-.auth-field input:focus,.auth-field select:focus{outline:none;border-color:#00a6a6;box-shadow:0 0 0 3px rgba(0,166,166,0.1)}
 .btn-primary{width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;font-size:15px}
 .btn-primary:hover{background:#008f8f}
 .alert{background:#fef2f0;color:#b42318;padding:12px;border-radius:7px;margin:16px 0;border-left:4px solid #b42318;display:none}
@@ -35,7 +34,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 <div id="authScreen" class="auth-container">
   <div class="auth-card">
     <div class="auth-brand"><div class="logo"></div>Contrato Claro</div>
-    <p style="font-size:13px;color:#627d98;margin-bottom:18px">Plataforma freelance con custodia de fondos</p>
+    <p style="font-size:13px;color:#627d98;margin-bottom:18px">Plataforma freelance con custodia de fondos bajo ley colombiana</p>
 
     <div class="auth-tabs">
       <button id="tabLoginBtn" class="active" type="button" onclick="showLogin()">Iniciar sesión</button>
@@ -87,51 +86,102 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
     <div style="font-weight:800;font-size:20px;display:flex;align-items:center;gap:10px"><div class="logo"></div>Contrato Claro</div>
     <div style="display:flex;align-items:center;gap:10px">
       <span id="sessionBadge" style="background:#e9fbf1;color:#087c38;padding:5px 10px;border-radius:99px;font-size:12px;font-weight:800">● Sesión</span>
-      <button onclick="handleLogout()" style="background:#d9e2ec;border:0;border-radius:50%;width:34px;height:34px;font-weight:800;cursor:pointer">FC</button>
+      <button onclick="handleLogout()" style="background:#d9e2ec;border:0;border-radius:50%;width:34px;height:34px;font-weight:800;cursor:pointer">Salir</button>
     </div>
   </div>
+  
   <div style="display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 68px)">
     <aside style="background:#fff;border-right:1px solid #d9e2ec;padding:22px 14px">
       <nav style="display:flex;flex-direction:column;gap:3px">
-        <button onclick="showView('inicio')" style="background:#e9f7f7;color:#087f80;border:0;padding:11px 13px;border-radius:9px;text-align:left;cursor:pointer;font-weight:650">⌂ Inicio</button>
-        <button onclick="showView('crear')" style="background:transparent;border:0;padding:11px 13px;border-radius:9px;text-align:left;cursor:pointer;font-weight:650;color:#486581">＋ Crear</button>
-        <button onclick="showView('contratos')" style="background:transparent;border:0;padding:11px 13px;border-radius:9px;text-align:left;cursor:pointer;font-weight:650;color:#486581">▣ Contratos</button>
-        <button onclick="showView('calculadora')" style="background:transparent;border:0;padding:11px 13px;border-radius:9px;text-align:left;cursor:pointer;font-weight:650;color:#486581">▤ Calculadora</button>
+        <button onclick="showView('inicio')" style="background:#e9f7f7;color:#087f80;border:0;padding:11px 13px;border-radius:99px;text-align:left;cursor:pointer;font-weight:650">⌂ Inicio</button>
+        <button onclick="showView('crear')" style="background:transparent;border:0;padding:11px 13px;border-radius:99px;text-align:left;cursor:pointer;font-weight:650;color:#486581">＋ Crear</button>
+        <button onclick="showView('contratos')" style="background:transparent;border:0;padding:11px 13px;border-radius:99px;text-align:left;cursor:pointer;font-weight:650;color:#486581">▣ Contratos</button>
+        <button onclick="showView('calculadora')" style="background:transparent;border:0;padding:11px 13px;border-radius:99px;text-align:left;cursor:pointer;font-weight:650;color:#486581">▤ Calculadora</button>
       </nav>
     </aside>
+
     <main style="padding:30px">
       <section id="view-inicio">
         <div style="background:linear-gradient(115deg,#0b2545,#124e78);padding:28px 30px;border-radius:17px;color:#fff;margin-bottom:29px">
-          <h1 style="font-size:27px;margin:0 0 6px">Trabaja con seguridad</h1>
-          <p style="opacity:0.87;margin:0">Contratos con custodia, hitos y disputas</p>
+          <h1 style="font-size:27px;margin:0 0 6px">Trabaja con seguridad legal</h1>
+          <p style="opacity:0.87;margin:0">Modelos adaptados a la normativa colombiana con custodia de pagos (Escrow)</p>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
           <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
-            <div style="font-size:21px;margin-bottom:12px">🧾</div>
-            <h3 style="margin:0 0 5px;font-size:16px">Prestación de Servicios</h3>
-            <button onclick="startContract('Prestación de Servicios')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:16px">Usar plantilla</button>
+            <div style="font-size:21px;margin-bottom:12px">💻</div>
+            <h3 style="margin:0 0 5px;font-size:16px">Desarrollo de Software</h3>
+            <p style="font-size:12px;color:#627d98;margin-bottom:12px">Incluye cesión de derechos patrimoniales (Ley 23 de 1982).</p>
+            <button onclick="startContract('Obra/Proyecto', 'software')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer">Usar plantilla</button>
+          </div>
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
+            <div style="font-size:21px;margin-bottom:12px">🎨</div>
+            <h3 style="margin:0 0 5px;font-size:16px">Diseño y Creatividad</h3>
+            <p style="font-size:12px;color:#627d98;margin-bottom:12px">Entrega de marca y piezas visuales autónomas.</p>
+            <button onclick="startContract('Prestación de Servicios', 'diseño')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer">Usar plantilla</button>
+          </div>
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
+            <div style="font-size:21px;margin-bottom:12px">📊</div>
+            <h3 style="margin:0 0 5px;font-size:16px">Consultoría Profesional</h3>
+            <p style="font-size:12px;color:#627d98;margin-bottom:12px">Asesoría técnica sin subordinación laboral.</p>
+            <button onclick="startContract('Consultoría', 'consultoria')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer">Usar plantilla</button>
           </div>
         </div>
       </section>
 
-      <!-- FORMULARIO DE CREAR CONTRATO -->
+      <!-- FORMULARIO DE CREAR CONTRATO CON MODELOS LEGALES -->
       <section id="view-crear" style="display:none">
-        <h2 style="margin-bottom:20px">Crear contrato</h2>
+        <h2 style="margin-bottom:20px">Crear nuevo contrato</h2>
         <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px">
-            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Tipo</label><select id="tipo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Prestación de Servicios</option><option>Obra/Proyecto</option><option>Consultoría</option></select></div>
-            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título</label><input id="titulo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Tipo de contrato</label>
+              <select id="tipo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+                <option value="Prestación de Servicios">Prestación de Servicios</option>
+                <option value="Obra/Proyecto">Obra o Proyecto</option>
+                <option value="Consultoría">Consultoría</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título corto</label>
+              <input id="titulo" placeholder="Ej: Desarrollo Web E-commerce" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+            </div>
             
             <div style="grid-column:1/-1">
               <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Correo de la otra parte (Debe estar registrado)</label>
               <input id="correo_contraparte" type="email" placeholder="cliente_o_freelancer@gmail.com" required style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
             </div>
 
-            <div style="grid-column:1/-1"><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Objeto</label><textarea id="objeto" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;min-height:88px"></textarea></div>
-            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Valor (COP)</label><input id="valor" type="number" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
-            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Pago</label><select id="forma_pago" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Por Hitos</option><option>Pago Único</option><option>50/50</option></select></div>
+            <!-- SELECTOR DE MODELOS LEGALES DE COLOMBIA -->
+            <div style="grid-column:1/-1;background:#f0f4f8;padding:12px;border-radius:8px;border:1px solid #d9e2ec">
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#0b2545">💡 Cargar modelo de Objeto según Ley Colombiana:</label>
+              <select id="plantillaObjeto" onchange="aplicarPlantillaObjeto()" style="width:100%;padding:9px;border:1px solid #bcccdc;border-radius:6px;background:#fff">
+                <option value="">-- Selecciona una plantilla técnica/legal --</option>
+                <option value="software">💻 Desarrollo de Software / App (Ley 23 de 1982 / Cesión de Derechos)</option>
+                <option value="diseño">🎨 Diseño Gráfico y Marketing (Autónomo / Código de Comercio)</option>
+                <option value="consultoria">📊 Consultoría y Asesoría Técnica (Sin Subordinación)</option>
+                <option value="servicios">🛠 Prestación de Servicios Generales (Régimen Civil/Comercial)</option>
+              </select>
+            </div>
+
+            <div style="grid-column:1/-1">
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Objeto y alcance del contrato</label>
+              <textarea id="objeto" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;min-height:110px" placeholder="Escribe el alcance o selecciona un modelo legal arriba..."></textarea>
+            </div>
+
+            <div>
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Valor total (COP)</label>
+              <input id="valor" type="number" placeholder="1500000" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Esquema de pago</label>
+              <select id="forma_pago" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+                <option value="Pago Único">Pago Único al Finalizar</option>
+                <option value="50/50">50% Anticipo / 50% Entrega</option>
+                <option value="Por Hitos">Por Hitos de Avance</option>
+              </select>
+            </div>
           </div>
-          <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:20px">Guardar contrato</button>
+          <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:20px">Guardar contrato y notificar</button>
         </div>
       </section>
 
@@ -141,11 +191,12 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
       </section>
 
       <section id="view-calculadora" style="display:none">
-        <h2 style="margin-bottom:20px">Calculadora</h2>
-        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
-          <p>Horas: <input type="number" id="horas" value="40" oninput="calc()"></p>
-          <p>Tarifa: <input type="number" id="tarifa" value="50000" oninput="calc()"></p>
-          <p>Base: <b id="base">$0</b></p>
+        <h2 style="margin-bottom:20px">Calculadora de honorarios</h2>
+        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;max-width:500px">
+          <p style="margin-bottom:10px">Horas estimadas: <input type="number" id="horas" value="40" oninput="calc()" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:80px"></p>
+          <p style="margin-bottom:10px">Tarifa por hora (COP): <input type="number" id="tarifa" value="50000" oninput="calc()" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:120px"></p>
+          <hr style="margin:15px 0;border:0;border-top:1px solid #eee">
+          <p style="font-size:16px">Valor sugerido del contrato: <b id="base" style="color:#00a6a6">$2,000,000</b></p>
         </div>
       </section>
     </main>
@@ -161,7 +212,22 @@ var BACKEND_URL = 'https://contrato-claro-backend.onrender.com';
 
 function $(id) { return document.getElementById(id); }
 
-// --- VISTAS Y TABS ---
+// --- PLANTILLAS CON NORMATIVA COLOMBIANA ---
+function aplicarPlantillaObjeto() {
+  var sel = $('plantillaObjeto').value;
+  var txt = $('objeto');
+  if (sel === 'software') {
+    txt.value = "El CONTRATISTA se obliga de forma independiente a desarrollar, probar y entregar el software/aplicación acordado. En cumplimiento de la Ley 23 de 1982 y Ley 1450 de 2011 de Colombia, el CONTRATISTA cede de manera total y exclusiva los derechos patrimoniales de autor sobre el código fuente y entregables al CONTRATANTE una vez verificado el pago completo del contrato.";
+  } else if (sel === 'diseño') {
+    txt.value = "El CONTRATISTA creará y entregará el material gráfico/visual especificado actuando con autonomía técnica y directiva. Los derechos de explotación comercial sobre el arte final serán transferidos al CONTRATANTE únicamente al completarse la liberación de fondos acordada, bajo el amparo del Código de Comercio colombiano.";
+  } else if (sel === 'consultoria') {
+    txt.value = "El CONTRATISTA brindará servicios de asesoría y consultoría técnica profesional sin subordinación ni cumplimiento de horario predeterminado. El servicio se limitará a la entrega de informes estratégicos y diagnósticos bajo la legislación civil y comercial de Colombia.";
+  } else if (sel === 'servicios') {
+    txt.value = "El CONTRATISTA ejecutará las actividades de prestación de servicios estipuladas con sus propios medios, autonomía administrativa y técnica, sin que el presente acuerdo genere relación de trabajo ni prestaciones sociales de carácter laboral entre las partes.";
+  }
+}
+
+// --- VISTAS Y NAVEGACIÓN ---
 function showLogin() {
   $('tabLoginBtn').classList.add('active'); $('tabRegisterBtn').classList.remove('active');$('loginForm').classList.add('active'); $('registerForm').classList.remove('active');$('authError').style.display = 'none';
 }
@@ -177,7 +243,14 @@ function showView(view) {
   if (view === 'contratos') loadContracts();
 }
 
-function startContract(tipo) { $('tipo').value = tipo; showView('crear'); }
+function startContract(tipo, plantilla) {
+  $('tipo').value = tipo;
+  if(plantilla) {
+    $('plantillaObjeto').value = plantilla;
+    aplicarPlantillaObjeto();
+  }
+  showView('crear');
+}
 
 // --- AUTENTICACIÓN ---
 $('loginForm').addEventListener('submit', async function(e) {   e.preventDefault();$('authError').style.display = 'none';
@@ -202,7 +275,7 @@ $('registerForm').addEventListener('submit', async function(e) {   e.preventDefa
       options: { data: { nombre: $('regNombre').value.trim(), rol:$('regRol').value } }
     });
     if (result.error) throw result.error;
-    alert('Registro exitoso. Inicia sesión ahora.');
+    alert('Registro exitoso. Procede a iniciar sesión.');
     showLogin();
   } catch (err) {
     $('authError').textContent = err.message;
@@ -215,7 +288,7 @@ async function handleLogout() {
   $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
 }
 
-// --- LOGICA DE CONTRATOS ---
+// --- LÓGICA DE CONTRATOS Y ROLES ---
 async function createContract() {
   var tipo = $('tipo').value;
   var titulo = $('titulo').value.trim();
@@ -225,26 +298,31 @@ async function createContract() {
   var correoContraparte = $('correo_contraparte').value.trim().toLowerCase();
 
   if (!titulo || !objeto || isNaN(valor) || !correoContraparte) { 
-    alert('Por favor completa todos los campos, incluyendo el correo de la otra parte.'); 
+    alert('Por favor completa todos los campos requeridos, incluyendo el correo de la otra parte.'); 
     return; 
   }
 
   try {
     var userResponse = await supabase.auth.getUser();
     var user = userResponse.data.user;
-    if (!user) throw new Error("No hay una sesión activa.");
+    if (!user) throw new Error("Sesión no válida.");
 
+    // Verificar si existe la contraparte por su correo
     var buscaContraparte = await supabase.from('perfiles_usuario').select('id').eq('correo', correoContraparte).maybeSingle();
 
     if (!buscaContraparte.data) {
-      alert('❌ ERROR: El correo ' + correoContraparte + ' no está registrado en la plataforma. Dile a esa persona que cree su cuenta primero.');
+      alert('❌ El correo ' + correoContraparte + ' no está registrado. Pídele que cree su cuenta en Contrato Claro primero.');
       return;
     }
 
     var perfilRes = await supabase.from('perfiles_usuario').select('rol').eq('id', user.id).single();
     var miRol = perfilRes.data ? perfilRes.data.rol : 'Freelancer';
-    var rolContraparte = miRol.toLowerCase().includes('cliente') ? 'Freelancer' : 'Cliente';
+    
+    // Determinar el rol opuesto para la otra persona
+    var esMiRolCliente = miRol.toLowerCase().includes('cliente') || miRol.toLowerCase().includes('contratante');
+    var rolContraparte = esMiRolCliente ? 'Freelancer' : 'Cliente / Contratante';
 
+    // Insertar contrato
     var response = await supabase.from('contratos').insert([{
       tipo: tipo, titulo: titulo, objeto: objeto, valor: valor, forma_pago: forma_pago, estado: 'Activo (Fondeado)'
     }]).select();
@@ -252,15 +330,18 @@ async function createContract() {
     if (response.error) throw response.error;
     var nuevoContrato = response.data[0];
 
-    await supabase.from('partes_contrato').insert([{ contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol }]);
-    await supabase.from('partes_contrato').insert([{ contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte }]);
+    // Vincular ambas partes al contrato
+    await supabase.from('partes_contrato').insert([
+      { contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol },
+      { contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte }
+    ]);
 
-    alert('✅ ¡Contrato creado y vinculado exitosamente!');
-    $('titulo').value = '';$('objeto').value = ''; $('valor').value = '';$('correo_contraparte').value = '';
+    alert('✅ ¡Contrato creado y vinculado exitosamente con ' + correoContraparte + '!');
+    $('titulo').value = ''; $('objeto').value = '';$('valor').value = ''; $('correo_contraparte').value = '';$('plantillaObjeto').value = '';
     showView('contratos');
 
   } catch (err) {
-    alert('Error al guardar el contrato: ' + err.message);
+    alert('Error al guardar: ' + err.message);
   }
 }
 
@@ -288,29 +369,38 @@ async function loadContracts() {
     container.innerHTML = registros.map(function(item) {
       if(!item.contratos) return '';
       var c = item.contratos;
-      var miRolEnContrato = item.rol_en_contrato;
-      var esCliente = miRolEnContrato && miRolEnContrato.toLowerCase().includes('cliente');
+      var miRolEnContrato = item.rol_en_contrato || '';
+      
+      // FILTRO DE SEGURIDAD PARA DIFERENCIAR CLIENTE DE FREELANCER
+      var esCliente = miRolEnContrato.toLowerCase().includes('cliente') || miRolEnContrato.toLowerCase().includes('contratante');
+      
       var accionEscrow = '';
 
       if (c.estado === 'Finalizado') {
-        accionEscrow = esCliente 
-          ? `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">✅ Dinero entregado al freelancer</span>`
-          : `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">🎉 Pago recibido en tu cuenta</span>`;
+        if (esCliente) {
+          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">✅ Dinero entregado al freelancer</span>`;
+        } else {
+          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">🎉 Pago recibido en tu cuenta</span>`;
+        }
       } else {
-        accionEscrow = esCliente 
-          ? `<button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">🔓 Liberar Fondos al Freelancer</button>`
-          : `<span style="background:#f0f4f8;color:#627d98;padding:8px 12px;border-radius:6px;font-size:13px;font-style:italic;">⏳ Esperando que el cliente libere el pago</span>`;
+        if (esCliente) {
+          // SOLO EL CLIENTE VE ESTE BOTÓN
+          accionEscrow = `<button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer;">🔓 Liberar Fondos al Freelancer</button>`;
+        } else {
+          // EL FREELANCER NUNCA VE EL BOTÓN
+          accionEscrow = `<span style="background:#f0f4f8;color:#627d98;padding:8px 12px;border-radius:6px;font-size:13px;font-style:italic;">⏳ Esperando que el cliente libere el pago</span>`;
+        }
       }
 
       return `
         <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px;margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <h3 style="margin:0;font-size:16px;">${c.titulo}</h3>
-            <span style="background:#e9fbf1;color:#087c38;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:800;">$${Number(c.valor || 0).toLocaleString('es-CO')}</span>
+            <span style="background:#e9fbf1;color:#087c38;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;">$${Number(c.valor || 0).toLocaleString('es-CO')} COP</span>
           </div>
-          <p style="font-size:13px;color:#486581;margin-bottom:10px;">${c.objeto}</p>
+          <p style="font-size:13px;color:#486581;margin-bottom:12px;line-height:1.4">${c.objeto}</p>
           <div style="display:flex;gap:12px;font-size:12px;color:#627d98;margin-bottom:12px;flex-wrap:wrap;">
-            <span>Rol: <b>${miRolEnContrato}</b></span> |
+            <span>Tu rol: <b>${miRolEnContrato}</b></span> |
             <span>Estado: <b>${c.estado}</b></span>
           </div>
           <div style="border-top:1px solid #f0f4f8;padding-top:15px;margin-top:10px;">
@@ -324,7 +414,7 @@ async function loadContracts() {
 }
 
 async function liberarEscrow(contratoId) {
-  if (!confirm('¿Estás seguro de que deseas liberar los fondos al freelancer?')) return;
+  if (!confirm('¿Estás seguro de que deseas liberar los fondos? Esta acción transferirá el dinero al freelancer.')) return;
   try {
     var response = await fetch(`${BACKEND_URL}/api/escrow/liberar`, {
       method: 'POST',
@@ -342,7 +432,7 @@ async function liberarEscrow(contratoId) {
 
 function calc() {
   var base = Number($('horas').value) * Number($('tarifa').value);
-  $('base').textContent = '$' + base.toLocaleString('es-CO');
+  $('base').textContent = '$' + base.toLocaleString('es-CO') + ' COP';
 }
 
 async function checkSession() {

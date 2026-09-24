@@ -321,14 +321,32 @@ var listadoHitos = [];
 // --- SINCRONIZACIÓN AUTOMÁTICA DEL PERFIL DE USUARIO ---
 async function syncPerfilUsuario(user) {
   if (!user) return;
+  var correo = user.email.toLowerCase();
   var nombre = (user.user_metadata && user.user_metadata.nombre) ? user.user_metadata.nombre : user.email.split('@')[0];
-  var rol = (user.user_metadata && user.user_metadata.rol) ? user.user_metadata.rol : 'Freelancer';
-  
+  var rolMetadata = (user.user_metadata && user.user_metadata.rol) ? user.user_metadata.rol : null;
+
+  // 1. Consultar si el usuario ya existe en perfiles_usuario
+  var { data: perfilExistente } = await supabase
+    .from('perfiles_usuario')
+    .select('rol, nombre')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  // 2. Determinar el rol definitivo (prioridad: BD existente > Metadata > Fallback)
+  var rolDefinitivo = (perfilExistente && perfilExistente.rol) 
+    ? perfilExistente.rol 
+    : (rolMetadata || 'Cliente o Contratante');
+
+  var nombreDefinitivo = (perfilExistente && perfilExistente.nombre) 
+    ? perfilExistente.nombre 
+    : nombre;
+
+  // 3. Guardar manteniendo el rol original intacto
   await supabase.from('perfiles_usuario').upsert({
     id: user.id,
-    correo: user.email.toLowerCase(),
-    nombre: nombre,
-    rol: rol
+    correo: correo,
+    nombre: nombreDefinitivo,
+    rol: rolDefinitivo
   });
 }
 

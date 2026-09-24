@@ -165,6 +165,8 @@ var SUPABASE_URL = 'https://gftdhhvsjpojxkdyuvpl.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmdGRoaHZzanBvanhrZHl1dnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNDQ5NjQsImV4cCI6MjEwNDYyMDk2NH0.Y5T1C7yJGOWP7Je55qOPY_3oOyvtOLFnGRWZN3nm0wA';
 var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+var BACKEND_URL = 'https://contrato-claro-backend.onrender.com';
+
 var currentProfile = null;
 
 function $(id) { return document.getElementById(id); }
@@ -262,10 +264,16 @@ async function createContract() {
   }
 
   try {
-    var user = (await supabase.auth.getUser()).data.user;
+    // 1. Obtener la información del usuario autenticado
+    var userResponse = await supabase.auth.getUser();
+    var user = userResponse.data.user;
 
+    if (!user) throw new Error("No hay una sesión activa.");
+
+    // 2. Insertar vinculando al creador
     var response = await supabase.from('CONTRATOS').insert([
       {
+        creador_id: user.id, // <-- IMPORTANTE: Asocia el contrato al usuario
         tipo: tipo,
         titulo: titulo,
         objeto: objeto,
@@ -278,10 +286,9 @@ async function createContract() {
     if (response.error) throw response.error;
 
     alert('¡Contrato creado correctamente!');
-    
-    // Limpiar formulario y redirigir
     $('titulo').value = '';
-    $('objeto').value = '';$('valor').value = '';
+    $('objeto').value = '';
+    $('valor').value = '';
     showView('contratos');
 
   } catch (err) {
@@ -289,6 +296,7 @@ async function createContract() {
   }
 }
 
+// 2. Leer Contratos desde Supabase
 // 2. Leer Contratos desde Supabase
 async function loadContracts() {
   var container = $('contractList');
@@ -322,16 +330,52 @@ async function loadContracts() {
             </span>
           </div>
           <p style="font-size:13px;color:#486581;margin-bottom:10px;">${c.objeto}</p>
-          <div style="display:flex;gap:12px;font-size:12px;color:#627d98;">
+          <div style="display:flex;gap:12px;font-size:12px;color:#627d98;margin-bottom:12px;">
             <span>Tipo: <b>${c.tipo}</b></span>
             <span>Pago: <b>${c.forma_pago}</b></span>
             <span>Estado: <b>${c.estado}</b></span>
+          </div>
+
+          <!-- BOTÓN PARA LIBERAR FONDOS -->
+          <div style="border-top:1px solid #f0f4f8;padding-top:10px;margin-top:10px;">
+            <button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">
+              🔓 Liberar Fondos
+            </button>
           </div>
         </div>`;
     }).join('');
 
   } catch (err) {
     container.innerHTML = '<p style="color:#b42318;">Error al cargar contratos: ' + err.message + '</p>';
+  }
+}
+
+
+// --- LLAMADA AL BACKEND EN RENDER PARA LIBERAR ESCROW ---
+async function liberarEscrow(contratoId) {
+  if (!confirm('¿Estás seguro de que deseas liberar los fondos en custodia para este contrato?')) {
+    return;
+  }
+
+  try {
+    var response = await fetch(`${BACKEND_URL}/api/escrow/liberar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ contrato_id: contratoId })
+    });
+
+    var data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Error al procesar la liberación de fondos.');
+    }
+
+    alert('¡Fondos liberados exitosamente!');
+    loadContracts(); // Recargar la lista de contratos para actualizar el estado
+  } catch (err) {
+    alert('Error en el servidor: ' + err.message);
   }
 }
 

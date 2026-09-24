@@ -1,6 +1,5 @@
-flask
+Flask
 flask-cors
-pyjwt
-bcrypt
+supabase
+python-dotenv
 gunicorn
-psycopg2-binary

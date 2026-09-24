@@ -318,6 +318,44 @@ var PLANTILLAS_HITOS = {
 
 var listadoHitos = [];
 
+
+  const $ = (id) => document.getElementById(id);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 1. EVENTO DE REGISTRO (Aquí va el código)
+    $('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      $('authError').style.display = 'none';
+      try {
+        var rolSeleccionado = $('regRol').value;
+        var nombreIngresado = $('regNombre').value.trim();
+        var correoIngresado = $('regCorreo').value.trim().toLowerCase();
+
+        var result = await supabase.auth.signUp({
+          email: correoIngresado,
+          password: $('regPassword').value,
+          options: { data: { nombre: nombreIngresado, rol: rolSeleccionado } }
+        });
+        if (result.error) throw result.error;
+
+        if (result.data.user) {
+          await supabase.from('perfiles_usuario').upsert({
+            id: result.data.user.id,
+            correo: correoIngresado,
+            nombre: nombreIngresado,
+            rol: rolSeleccionado
+          });
+        }
+
+        alert('✅ Cuenta creada exitosamente.');
+      } catch (err) {
+        $('authError').textContent = err.message;
+        $('authError').style.display = 'block';
+      }
+    });
+
+  
+
 // --- SINCRONIZACIÓN AUTOMÁTICA DEL PERFIL DE USUARIO ---
 async function syncPerfilUsuario(user) {
   if (!user) return;

@@ -183,7 +183,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
             </div>
           </div>
 
-          <!-- CONFIGURACIÓN DEL MÓDULO DE DISPUTAS Y CONTROVERSIAS -->
+          <!-- CONFIGURACIÓN DEL MÓDULO DE DISPUTAS -->
           <div style="background:#fefce8;border:1px solid #fef08a;border-radius:10px;padding:18px;margin-bottom:20px">
             <h4 style="font-size:15px;color:#854d0e;margin-bottom:6px">⚖️ Módulo de Solución de Controversias</h4>
             <p style="font-size:12px;color:#a16207;margin-bottom:12px">Define los términos para la negociación y escalación en caso de desacuerdo.</p>
@@ -238,7 +238,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
   </div>
 </div>
 
-<!-- MODAL PARA REPORTAR O EDITAR DISPUTA -->
+<!-- MODAL PARA REPORTAR DISPUTA -->
 <div id="disputaModal" class="modal-overlay">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
@@ -367,7 +367,6 @@ function eliminarHito(index) {
   renderHitosInputs();
 }
 
-// --- CLÁUSULAS CON MÓDULO DE DISPUTAS ---
 function obtenerClausulas(modulo, titulo, valorTotal) {
   var valFormatted = '$' + Number(valorTotal || 0).toLocaleString('es-CO') + ' COP';
   var t = titulo || '[Nombre del Proyecto]';
@@ -594,9 +593,12 @@ async function loadContracts() {
         } else if (disputaActiva) {
           botonAccion = `<span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800">🔒 Bloqueado (Disputa Activa)</span>`;
         } else {
+          // Si no hay disputa activa (o la disputa ya fue RESUELTA):
           if (esCliente) {
+            // SOLO EL CLIENTE TIENE EL BOTÓN DE LIBERACIÓN DE PAGO
             botonAccion = `<button onclick="liberarHito('${h.id}', '${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">🔓 Liberar Este Hito ($${Number(h.monto).toLocaleString('es-CO')} COP)</button>`;
           } else {
+            // EL FREELANCER SOLAMENTE VE EL ESTADO EN ESPERA DEL DESEMBOLSO
             botonAccion = `<span style="color:#627d98;font-style:italic;font-size:12px">⏳ Pendiente de pago por el cliente</span>`;
           }
         }
@@ -611,7 +613,6 @@ async function loadContracts() {
           </div>`;
       }).join('');
 
-      // RENDERIZAR VISTA DE DISPUTAS VINCULADAS
       var renderDisputasHTML = disputasDelContrato.map(function(d) {
         var esIniciador = d.iniciador_id === user.id;
         var evidencias = todasLasEvidencias.filter(e => e.disputa_id === d.id);
@@ -694,7 +695,7 @@ async function generarHashSHA256(texto) {
 
 async function guardarDisputa() {
   var contratoIdRaw = $('disputaContratoId').value;
-  var contratoId = parseInt(contratoIdRaw, 10); // Convierte a número entero (BIGINT)
+  var contratoId = parseInt(contratoIdRaw, 10);
   var motivo = $('dispMotivo').value;
   var descripcion = $('dispDescripcion').value.trim();
   var monto = $('dispMonto').value;
@@ -704,7 +705,7 @@ async function guardarDisputa() {
   var evUrl = $('evidenciaUrl').value.trim();
 
   if (!contratoId || isNaN(contratoId)) {
-    alert('Error: No se encontró un ID de contrato válido. Recarga la página.');
+    alert('Error: No se encontró un ID de contrato válido.');
     return;
   }
 
@@ -717,7 +718,6 @@ async function guardarDisputa() {
     var userResponse = await supabase.auth.getUser();
     var user = userResponse.data.user;
 
-    // 1. Guardar la Disputa con el ID numérico correcto
     var dispRes = await supabase.from('disputas').insert([{
       contrato_id: contratoId,
       iniciador_id: user.id,
@@ -733,7 +733,6 @@ async function guardarDisputa() {
     if (dispRes.error) throw dispRes.error;
     var nuevaDisputa = dispRes.data[0];
 
-    // 2. Guardar Evidencia con Hash si existe
     if (evNombre && evUrl) {
       var hashVal = await generarHashSHA256(evNombre + evUrl + new Date().toISOString());
       await supabase.from('evidencias_disputa').insert([{
@@ -745,7 +744,7 @@ async function guardarDisputa() {
       }]);
     }
 
-    alert('🚨 Disputa registrada con éxito. Se ha notificado a la contraparte y congelado los pagos.');
+    alert('🚨 Disputa registrada con éxito. Pagos congelados.');
     cerrarModalDisputa();
     loadContracts();
   } catch (err) {
@@ -754,7 +753,7 @@ async function guardarDisputa() {
 }
 
 async function aceptarSolucionDisputa(disputaId) {
-  if (!confirm('¿Aceptas la propuesta de solución? Al aceptar, la disputa cambiará a RESUELTA y se desbloquearán los pagos del contrato.')) return;
+  if (!confirm('¿Aceptas la propuesta de solución? Al aceptar, la disputa se marcará como RESUELTA y el cliente podrá proceder con la liberación de pagos.')) return;
 
   try {
     var res = await supabase.from('disputas').update({
@@ -764,16 +763,35 @@ async function aceptarSolucionDisputa(disputaId) {
 
     if (res.error) throw res.error;
 
-    alert('🎉 La disputa ha sido RESUELTA por acuerdo mutuo.');
+    alert('🎉 Disputa resuelta por acuerdo mutuo. El cliente ya tiene habilitada la opción para liberar el pago.');
     loadContracts();
   } catch (err) {
     alert('Error al resolver la disputa: ' + err.message);
   }
 }
 
-// --- LIBERAR HITO CON VERIFICACIÓN ---
+// --- LIBERAR HITO CON VERIFICACIÓN ESTRICTA DE ROL Y DISPUTA ---
 async function liberarHito(hitoId, contratoId) {
   try {
+    var userResponse = await supabase.auth.getUser();
+    var user = userResponse.data.user;
+
+    // 1. Verificar en base de datos si el usuario actual es efectivamente el Cliente
+    var parteRes = await supabase.from('partes_contrato')
+      .select('rol_en_contrato')
+      .eq('contrato_id', contratoId)
+      .eq('perfil_id', user.id)
+      .single();
+
+    var miRol = parteRes.data ? parteRes.data.rol_en_contrato : '';
+    var esCliente = miRol.toLowerCase().includes('cliente') || miRol.toLowerCase().includes('contratante');
+
+    if (!esCliente) {
+      alert('⛔ Solo el cliente/contratante tiene la facultad de autorizar y liberar los pagos.');
+      return;
+    }
+
+    // 2. Verificar que no exista disputa activa
     var checkDisp = await supabase.from('disputas').select('id, estado').eq('contrato_id', contratoId);
     var disputaActiva = checkDisp.data && checkDisp.data.find(d => d.estado === 'ABIERTA' || d.estado === 'EN_NEGOCIACION');
 

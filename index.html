@@ -19,7 +19,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 .auth-field{margin-bottom:13px}
 .auth-field label{display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#334e68}
 .auth-field input,.auth-field select{width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;font-size:14px}
-.btn-primary{width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;font-size:15px}
+.btn-primary{width:100%;background:#00a6a6;color:#fff;border:0;border-radius:99px;padding:11px 15px;font-weight:800;cursor:pointer;font-size:15px}
 .btn-primary:hover{background:#008f8f}
 .alert{background:#fef2f0;color:#b42318;padding:12px;border-radius:7px;margin:16px 0;border-left:4px solid #b42318;display:none}
 .auth-form{display:none}
@@ -108,28 +108,28 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
       <section id="view-inicio">
         <div style="background:linear-gradient(115deg,#0b2545,#124e78);padding:28px 30px;border-radius:17px;color:#fff;margin-bottom:29px">
           <h1 style="font-size:26px;margin:0 0 6px">Contratos Modulares con Pago por Hitos</h1>
-          <p style="opacity:0.87;margin:0">Define entregables específicos y libera el dinero a medida que avanza el proyecto.</p>
+          <p style="opacity:0.87;margin:0">Selecciona una categoría para cargar las cláusulas e hitos prediseñados.</p>
         </div>
         
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px">
           <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
             <span class="badge-modulo">Módulo 1</span>
             <h3 style="margin:0 0 6px;font-size:16px">💻 Desarrollo Software / App</h3>
-            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Código fuente, propiedad intelectual y pagos por entregables de desarrollo.</p>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Código fuente, propiedad intelectual y 3 hitos de desarrollo (Diseño, Dev, QA).</p>
             <button onclick="cargarModulo('software')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Contrato</button>
           </div>
 
           <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
             <span class="badge-modulo">Módulo 2</span>
             <h3 style="margin:0 0 6px;font-size:16px">🎨 Diseño Gráfico y Marketing</h3>
-            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Revisiones, archivos editables y desembolso por lote de diseños.</p>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Revisiones, derechos de autor sobre editables y 2 hitos de entrega.</p>
             <button onclick="cargarModulo('diseno')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Contrato</button>
           </div>
 
           <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
             <span class="badge-modulo">Módulo 3</span>
             <h3 style="margin:0 0 6px;font-size:16px">📊 Consultoría Técnica</h3>
-            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Asesorías, informes periódicos y pagos por fases completadas.</p>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Confidencialidad (NDA), informes periódicos y pagos por fases.</p>
             <button onclick="cargarModulo('consultoria')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Contrato</button>
           </div>
         </div>
@@ -137,13 +137,13 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 
       <!-- CREACIÓN Y CONFIGURACIÓN DE HITOS -->
       <section id="view-crear" style="display:none">
-        <h2 style="margin-bottom:16px">Editor y Creador de Hitos</h2>
+        <h2 style="margin-bottom:16px">Editor Modular de Contratos</h2>
         <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
           
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px">
             <div>
               <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Módulo del Servicio</label>
-              <select id="moduloSelect" onchange="actualizarClausulasPorModulo()" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;background:#f0f4f8;font-weight:700">
+              <select id="moduloSelect" onchange="alCambiarModuloSelect()" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;background:#f0f4f8;font-weight:700">
                 <option value="software">💻 Desarrollo de Software / App</option>
                 <option value="diseno">🎨 Diseño Gráfico y Marketing</option>
                 <option value="consultoria">📊 Consultoría y Asesoría Técnica</option>
@@ -152,7 +152,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
             </div>
             <div>
               <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título del Proyecto</label>
-              <input id="titulo" placeholder="Ej: Desarrollo de App Móvil iOS/Android" oninput="actualizarClausulasPorModulo()" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+              <input id="titulo" placeholder="Ej: Desarrollo de Plataforma E-commerce" oninput="actualizarClausulasPorModulo()" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
             </div>
 
             <div style="grid-column:1/-1">
@@ -161,12 +161,12 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
             </div>
           </div>
 
-          <!-- SECCIÓN DE SELECCIÓN Y CONFIGURACIÓN DE HITOS -->
+          <!-- SECCIÓN DE HITOS DE PAGO -->
           <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:18px;margin-bottom:20px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
               <div>
                 <h4 style="font-size:15px;color:#0b2545">🎯 Desglose de Hitos del Contrato</h4>
-                <p style="font-size:12px;color:#627d98">Define las entregas. El dinero de cada hito se liberará individualmente.</p>
+                <p style="font-size:12px;color:#627d98">Puedes editar la descripción y el precio de cada hito a tu gusto.</p>
               </div>
               <button onclick="agregarHito()" style="background:#087f80;color:#fff;border:0;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">＋ Agregar Hito</button>
             </div>
@@ -181,7 +181,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 
           <!-- CLÁUSULAS GENERADAS -->
           <div style="margin-top:20px">
-            <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#0b2545">Cláusulas del Contrato Generadas (Editables):</label>
+            <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#0b2545">Cláusulas del Contrato Adaptadas al Módulo (Editables):</label>
             <textarea id="objeto" style="width:100%;padding:14px;border:1px solid #bcccdc;border-radius:8px;min-height:280px;font-family:monospace;font-size:13px;line-height:1.5;background:#fafbfc"></textarea>
           </div>
 
@@ -217,36 +217,67 @@ var BACKEND_URL = 'https://contrato-claro-backend.onrender.com';
 
 function $(id) { return document.getElementById(id); }
 
-// --- GESTIÓN DINÁMICA DE HITOS EN EL FRONTEND ---
-var listadoHitos = [
-  { titulo: 'Hito 1: Entrega de Prototipo / Diseño inicial', monto: 1000000 },
-  { titulo: 'Hito 2: Entrega Final y Despliegue', monto: 1000000 }
-];
+// --- PLANTILLAS DE HITOS POR MÓDULO ---
+var PLANTILLAS_HITOS = {
+  software: [
+    { titulo: 'Hito 1: Prototipeado, Arquitectura y UI/UX', monto: 1000000 },
+    { titulo: 'Hito 2: Desarrollo Frontend, Backend e Integración', monto: 1500000 },
+    { titulo: 'Hito 3: QA, Pruebas y Despliegue en Producción', monto: 1000000 }
+  ],
+  diseno: [
+    { titulo: 'Hito 1: Concepto Creativo y Primeros Bocetos', monto: 600000 },
+    { titulo: 'Hito 2: Revisiones y Entrega de Archivos Editables Finales', monto: 600000 }
+  ],
+  consultoria: [
+    { titulo: 'Hito 1: Diagnóstico Inicial y Levantamiento de Requerimientos', monto: 800000 },
+    { titulo: 'Hito 2: Entrega de Informe Final y Sesión de Asesoría', monto: 1000000 }
+  ],
+  servicios: [
+    { titulo: 'Hito 1: Avance Inicial del Servicio (50%)', monto: 500000 },
+    { titulo: 'Hito 2: Entrega Final y Conformidad del Trabajo', monto: 500000 }
+  ]
+};
+
+var listadoHitos = [];
+
+function cargarHitosSegunModulo(moduloKey) {
+  var base = PLANTILLAS_HITOS[moduloKey] || PLANTILLAS_HITOS.servicios;
+  listadoHitos = JSON.parse(JSON.stringify(base));
+  renderHitosInputs();
+}
 
 function renderHitosInputs() {
   var container = $('hitosContainer');
   var html = '';
-  var total = 0;
 
   listadoHitos.forEach(function(h, index) {
-    total += Number(h.monto || 0);
     html += `
       <div class="hito-row">
-        <input style="flex:2;" type="text" value="${h.titulo}" onchange="actualizarHito(${index}, 'titulo', this.value)" placeholder="Descripción del hito">
+        <input style="flex:2;" type="text" value="${h.titulo}" oninput="actualizarHito(${index}, 'titulo', this.value)" placeholder="Descripción del hito">
         <input style="flex:1;" type="number" value="${h.monto}" oninput="actualizarHito(${index}, 'monto', this.value)" placeholder="Monto COP">
         ${listadoHitos.length > 1 ? `<button onclick="eliminarHito(${index})" style="background:#fef2f0;color:#b42318;border:1px solid #fecaca;padding:7px 10px;border-radius:6px;cursor:pointer;font-weight:700">✕</button>` : ''}
       </div>`;
   });
 
   container.innerHTML = html;
-  $('sumaTotalHitos').textContent = '$' + total.toLocaleString('es-CO') + ' COP';
+  actualizarSumaTotal();
   actualizarClausulasPorModulo();
 }
 
+// Actualiza el arreglo sin volver a re-renderizar los HTML inputs (solución al bug de edición)
 function actualizarHito(index, campo, valor) {
-  if (campo === 'monto') listadoHitos[index].monto = parseFloat(valor) || 0;
-  if (campo === 'titulo') listadoHitos[index].titulo = valor;
-  renderHitosInputs();
+  if (campo === 'monto') {
+    listadoHitos[index].monto = parseFloat(valor) || 0;
+  } else if (campo === 'titulo') {
+    listadoHitos[index].titulo = valor;
+  }
+  actualizarSumaTotal();
+  actualizarClausulasPorModulo();
+}
+
+function actualizarSumaTotal() {
+  var total = listadoHitos.reduce((acc, h) => acc + (Number(h.monto) || 0), 0);
+  $('sumaTotalHitos').textContent = '$' + total.toLocaleString('es-CO') + ' COP';
 }
 
 function agregarHito() {
@@ -259,35 +290,73 @@ function eliminarHito(index) {
   renderHitosInputs();
 }
 
-// --- CLÁUSULAS PREDETERMINADAS ---
+// --- CLÁUSULAS ESPECÍFICAS SEGÚN MÓDULO ---
 function obtenerClausulas(modulo, titulo, valorTotal) {
   var valFormatted = '$' + Number(valorTotal || 0).toLocaleString('es-CO') + ' COP';
   var t = titulo || '[Nombre del Proyecto]';
 
-  return `CLÁUSULA PRIMERA – OBJETO:
-El CONTRATISTA se obliga a desarrollar y entregar al CONTRATANTE los servicios de: ${t}, ejecutados bajo el esquema de pagos por hitos.
+  if (modulo === 'software') {
+    return `CLÁUSULA PRIMERA – OBJETO:
+El CONTRATISTA se obliga a desarrollar el software denominado "${t}", entregando el código fuente, documentaciones técnicas y funcionalidades acordadas.
 
 CLÁUSULA SEGUNDA – ESQUEMA DE HITOS Y CUSTODIA:
-El valor total del contrato es de ${valFormatted}, el cual se encuentra fondeado en custodia (Escrow). Los desembolsos se realizarán hito por hito previa aprobación del CONTRATANTE.
+El valor total de ${valFormatted} se encuentra depositado en custodia. Cada hito de desarrollo requerirá revisión y aprobación por parte del CONTRATANTE para realizar su desembolso.
 
-CLÁUSULA TERCERA – ENTREGABLES Y DERECHOS:
-Con la liberación de cada hito, se transferirán formalmente los derechos patrimoniales sobre el avance correspondiente de acuerdo con la legislación colombiana vigente.
+CLÁUSULA TERCERA – PROPIEDAD INTELECTUAL Y CÓDIGO FUENTE:
+La totalidad de los derechos patrimoniales sobre el software y código fuente se transferirán automáticamente al CONTRATANTE a medida que se liberen los hitos correspondientes.
 
-CLÁUSULA CUARTA – CONFIDENCIALIDAD Y AUTONOMÍA:
-El CONTRATISTA ejecutará sus actividades con plena autonomía técnica y administrativa, obligándose a guardar reserva sobre la información suministrada.`;
+CLÁUSULA CUARTA – GARANTÍA Y ERRORES:
+El CONTRATISTA se compromete a solucionar cualquier falla o error técnico (bug) sin costo adicional durante un período de 30 días posteriores a la entrega del último hito.`;
+  } 
+  
+  if (modulo === 'diseno') {
+    return `CLÁUSULA PRIMERA – OBJETO:
+El CONTRATISTA elaborará las piezas gráficas, diseños y material visual especificado bajo el título "${t}".
+
+CLÁUSULA SEGUNDA – ENTREGABLES Y EDITABLES:
+Con la liberación de cada hito, el CONTRATANTE recibirá los archivos finales y fuentes editables (Figma, Illustrator, Photoshop, etc.) con licencia de uso comercial ilimitada.
+
+CLÁUSULA TERCERA – REVISIONES Y AJUSTES:
+Se incluyen hasta tres (3) rondas de modificaciones menores por cada hito. Cambios conceptuales o adicionales fuera de lo pactado requerirán un nuevo hito.`;
+  } 
+
+  if (modulo === 'consultoria') {
+    return `CLÁUSULA PRIMERA – OBJETO:
+El CONTRATISTA prestará servicios profesionales de consultoría técnica y asesoría para el proyecto "${t}".
+
+CLÁUSULA SEGUNDA – CONFIDENCIALIDAD (NDA):
+Toda la información técnica, financiera y comercial compartida será de carácter estrictamente confidencial y protegida por la normatividad vigente.
+
+CLÁUSULA TERCERA – INFORMES Y ACEPTACIÓN:
+La liberación de fondos de cada hito de consultoría constituye la certificación formal por parte del CONTRATANTE de haber recibido a satisfacción el informe técnico correspondiente.`;
+  } 
+
+  return `CLÁUSULA PRIMERA – OBJETO:
+El CONTRATISTA se obliga a prestar los servicios profesionales independientes para "${t}".
+
+CLÁUSULA SEGUNDA – PAGO POR HITOS:
+El monto total del contrato es de ${valFormatted}, desembolsado por hitos una vez verificada la ejecución de los entregables parciales.
+
+CLÁUSULA TERCERA – AUTONOMÍA JURÍDICA:
+El CONTRATISTA actuará con plena autonomía técnica y administrativa, sin que exista relación de subordinación ni vínculo laboral.`;
 }
 
 function actualizarClausulasPorModulo() {
   var mod = $('moduloSelect').value;
   var tit = $('titulo').value.trim();
   var total = listadoHitos.reduce((acc, h) => acc + (Number(h.monto) || 0), 0);
-  
   $('objeto').value = obtenerClausulas(mod, tit, total);
+}
+
+function alCambiarModuloSelect() {
+  var mod = $('moduloSelect').value;
+  cargarHitosSegunModulo(mod);
 }
 
 function cargarModulo(moduloKey) {
   $('moduloSelect').value = moduloKey;
   showView('crear');
+  cargarHitosSegunModulo(moduloKey);
 }
 
 // --- VISTAS ---
@@ -303,7 +372,9 @@ function showView(view) {
   ['inicio', 'crear', 'contratos', 'calculadora'].forEach(function(v) {
     $('view-' + v).style.display = v === view ? 'block' : 'none';
   });
-  if (view === 'crear') renderHitosInputs();
+  if (view === 'crear' && listadoHitos.length === 0) {
+    cargarHitosSegunModulo($('moduloSelect').value);
+  }
   if (view === 'contratos') loadContracts();
 }
 
@@ -433,7 +504,6 @@ async function loadContracts() {
       return;
     }
 
-    // Cargar también todos los hitos vinculados
     var hitosRes = await supabase.from('hitos_contrato').select('*');
     var todosLosHitos = hitosRes.data || [];
 
@@ -453,10 +523,8 @@ async function loadContracts() {
           botonAccion = `<span style="color:#087c38;font-weight:800;font-size:12px">✅ Hito Pagado</span>`;
         } else {
           if (esCliente) {
-            // SOLO CLIENTE LIBERA EL HITO
             botonAccion = `<button onclick="liberarHito('${h.id}', '${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">🔓 Liberar Este Hito ($${Number(h.monto).toLocaleString('es-CO')} COP)</button>`;
           } else {
-            // FREELANCER SOLO VE ESTADO
             botonAccion = `<span style="color:#627d98;font-style:italic;font-size:12px">⏳ Pendiente de pago por el cliente</span>`;
           }
         }
@@ -496,18 +564,15 @@ async function loadContracts() {
 async function liberarHito(hitoId, contratoId) {
   if (!confirm('¿Deseas liberar los fondos correspondientes a este hito específico al freelancer?')) return;
   try {
-    // 1. Actualizar estado del hito en Supabase
     var updateHito = await supabase.from('hitos_contrato').update({ estado: 'Liberado' }).eq('id', hitoId);
     if (updateHito.error) throw updateHito.error;
 
-    // 2. Notificar al backend de pago
     await fetch(`${BACKEND_URL}/api/escrow/liberar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contrato_id: contratoId, hito_id: hitoId })
     });
 
-    // 3. Comprobar si todos los hitos están liberados para finalizar el contrato
     var consultaHitos = await supabase.from('hitos_contrato').select('estado').eq('contrato_id', contratoId);
     var todosLiberados = consultaHitos.data && consultaHitos.data.every(h => h.estado === 'Liberado');
 

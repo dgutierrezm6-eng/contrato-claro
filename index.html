@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contrato Claro</title>
+<title>Contrato Claro - Plataforma Modular Freelance</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -26,15 +26,16 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 .auth-form.active{display:block}
 .app{display:none}
 .app.active{display:block}
+.badge-modulo{background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px}
 </style>
 </head>
 <body>
 
-<!-- LOGIN / REGISTRO -->
+<!-- AUTENTICACIÓN -->
 <div id="authScreen" class="auth-container">
   <div class="auth-card">
     <div class="auth-brand"><div class="logo"></div>Contrato Claro</div>
-    <p style="font-size:13px;color:#627d98;margin-bottom:18px">Plataforma freelance con custodia de fondos bajo ley colombiana</p>
+    <p style="font-size:13px;color:#627d98;margin-bottom:18px">Contratos modulares con custodia de fondos en Colombia</p>
 
     <div class="auth-tabs">
       <button id="tabLoginBtn" class="active" type="button" onclick="showLogin()">Iniciar sesión</button>
@@ -71,7 +72,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
       <div class="auth-field">
         <label for="regRol">Eres...</label>
         <select id="regRol">
-          <option value="Freelancer">Freelancer</option>
+          <option value="Freelancer">Freelancer / Contratista</option>
           <option value="Cliente o Contratante">Cliente / Contratante</option>
         </select>
       </div>
@@ -86,117 +87,124 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
     <div style="font-weight:800;font-size:20px;display:flex;align-items:center;gap:10px"><div class="logo"></div>Contrato Claro</div>
     <div style="display:flex;align-items:center;gap:10px">
       <span id="sessionBadge" style="background:#e9fbf1;color:#087c38;padding:5px 10px;border-radius:99px;font-size:12px;font-weight:800">● Sesión</span>
-      <button onclick="handleLogout()" style="background:#d9e2ec;border:0;border-radius:50%;width:34px;height:34px;font-weight:800;cursor:pointer">Salir</button>
+      <button onclick="handleLogout()" style="background:#d9e2ec;border:0;border-radius:50%;padding:6px 12px;font-weight:800;cursor:pointer">Salir</button>
     </div>
   </div>
   
-  <div style="display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 68px)">
+  <div style="display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 68px)">
     <aside style="background:#fff;border-right:1px solid #d9e2ec;padding:22px 14px">
-      <nav style="display:flex;flex-direction:column;gap:3px">
-        <button onclick="showView('inicio')" style="background:#e9f7f7;color:#087f80;border:0;padding:11px 13px;border-radius:99px;text-align:left;cursor:pointer;font-weight:650">⌂ Inicio</button>
-        <button onclick="showView('crear')" style="background:transparent;border:0;padding:11px 13px;border-radius:99px;text-align:left;cursor:pointer;font-weight:650;color:#486581">＋ Crear</button>
-        <button onclick="showView('contratos')" style="background:transparent;border:0;padding:11px 13px;border-radius:99px;text-align:left;cursor:pointer;font-weight:650;color:#486581">▣ Contratos</button>
-        <button onclick="showView('calculadora')" style="background:transparent;border:0;padding:11px 13px;border-radius:99px;text-align:left;cursor:pointer;font-weight:650;color:#486581">▤ Calculadora</button>
+      <nav style="display:flex;flex-direction:column;gap:5px">
+        <button onclick="showView('inicio')" style="background:#e9f7f7;color:#087f80;border:0;padding:11px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:700">⌂ Inicio / Módulos</button>
+        <button onclick="showView('crear')" style="background:transparent;border:0;padding:11px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:700;color:#486581">＋ Editor Modular</button>
+        <button onclick="showView('contratos')" style="background:transparent;border:0;padding:11px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:700;color:#486581">▣ Mis Contratos</button>
+        <button onclick="showView('calculadora')" style="background:transparent;border:0;padding:11px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:700;color:#486581">▤ Calculadora</button>
       </nav>
     </aside>
 
     <main style="padding:30px">
+      <!-- INICIO CON MÓDULOS -->
       <section id="view-inicio">
         <div style="background:linear-gradient(115deg,#0b2545,#124e78);padding:28px 30px;border-radius:17px;color:#fff;margin-bottom:29px">
-          <h1 style="font-size:27px;margin:0 0 6px">Trabaja con seguridad legal</h1>
-          <p style="opacity:0.87;margin:0">Modelos adaptados a la normativa colombiana con custodia de pagos (Escrow)</p>
+          <h1 style="font-size:26px;margin:0 0 6px">Contratos Modulares Inteligentes</h1>
+          <p style="opacity:0.87;margin:0">Selecciona el módulo de tu servicio. El sistema generará todas las cláusulas legales automáticamente.</p>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
-          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
-            <div style="font-size:21px;margin-bottom:12px">💻</div>
-            <h3 style="margin:0 0 5px;font-size:16px">Desarrollo de Software</h3>
-            <p style="font-size:12px;color:#627d98;margin-bottom:12px">Incluye cesión de derechos patrimoniales (Ley 23 de 1982).</p>
-            <button onclick="startContract('Obra/Proyecto', 'software')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer">Usar plantilla</button>
+        
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px">
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
+            <span class="badge-modulo">Módulo 1</span>
+            <h3 style="margin:0 0 6px;font-size:16px">💻 Desarrollo Software / App</h3>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Cláusulas de código fuente, propiedad intelectual, soporte, garantía y cambios de alcance.</p>
+            <button onclick="cargarModulo('software')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Cláusulas</button>
           </div>
-          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
-            <div style="font-size:21px;margin-bottom:12px">🎨</div>
-            <h3 style="margin:0 0 5px;font-size:16px">Diseño y Creatividad</h3>
-            <p style="font-size:12px;color:#627d98;margin-bottom:12px">Entrega de marca y piezas visuales autónomas.</p>
-            <button onclick="startContract('Prestación de Servicios', 'diseño')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer">Usar plantilla</button>
+
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
+            <span class="badge-modulo">Módulo 2</span>
+            <h3 style="margin:0 0 6px;font-size:16px">🎨 Diseño Gráfico y Marketing</h3>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Cláusulas de rondas de revisión, archivos editables, aprobación de piezas y portafolio.</p>
+            <button onclick="cargarModulo('diseno')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Cláusulas</button>
           </div>
-          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
-            <div style="font-size:21px;margin-bottom:12px">📊</div>
-            <h3 style="margin:0 0 5px;font-size:16px">Consultoría Profesional</h3>
-            <p style="font-size:12px;color:#627d98;margin-bottom:12px">Asesoría técnica sin subordinación laboral.</p>
-            <button onclick="startContract('Consultoría', 'consultoria')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer">Usar plantilla</button>
+
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
+            <span class="badge-modulo">Módulo 3</span>
+            <h3 style="margin:0 0 6px;font-size:16px">📊 Consultoría Técnica</h3>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Cláusulas de autonomía profesional, confidencialidad, informes y responsabilidad.</p>
+            <button onclick="cargarModulo('consultoria')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Cláusulas</button>
+          </div>
+
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
+            <span class="badge-modulo">Módulo 4</span>
+            <h3 style="margin:0 0 6px;font-size:16px">🛠 Servicios Generales</h3>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Plantilla flexible de obligaciones recíprocas, plazo, forma de ejecución y terminación.</p>
+            <button onclick="cargarModulo('servicios')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Cláusulas</button>
           </div>
         </div>
       </section>
 
-      <!-- FORMULARIO DE CREAR CONTRATO CON MODELOS LEGALES -->
+      <!-- EDITOR Y GENERADOR DE CONTRATO CON CLÁUSULA MÓDULO -->
       <section id="view-crear" style="display:none">
-        <h2 style="margin-bottom:20px">Crear nuevo contrato</h2>
+        <h2 style="margin-bottom:16px">Editor y Generador Modular de Contrato</h2>
         <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px">
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px">
             <div>
-              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Tipo de contrato</label>
-              <select id="tipo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
-                <option value="Prestación de Servicios">Prestación de Servicios</option>
-                <option value="Obra/Proyecto">Obra o Proyecto</option>
-                <option value="Consultoría">Consultoría</option>
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Módulo del Servicio</label>
+              <select id="moduloSelect" onchange="actualizarClausulasPorModulo()" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;background:#f0f4f8;font-weight:700">
+                <option value="software">💻 Desarrollo de Software / App</option>
+                <option value="diseno">🎨 Diseño Gráfico y Marketing</option>
+                <option value="consultoria">📊 Consultoría y Asesoría Técnica</option>
+                <option value="servicios">🛠 Prestación de Servicios Generales</option>
               </select>
             </div>
             <div>
-              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título corto</label>
-              <input id="titulo" placeholder="Ej: Desarrollo Web E-commerce" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
-            </div>
-            
-            <div style="grid-column:1/-1">
-              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Correo de la otra parte (Debe estar registrado)</label>
-              <input id="correo_contraparte" type="email" placeholder="cliente_o_freelancer@gmail.com" required style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
-            </div>
-
-            <!-- SELECTOR DE MODELOS LEGALES DE COLOMBIA -->
-            <div style="grid-column:1/-1;background:#f0f4f8;padding:12px;border-radius:8px;border:1px solid #d9e2ec">
-              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#0b2545">💡 Cargar modelo de Objeto según Ley Colombiana:</label>
-              <select id="plantillaObjeto" onchange="aplicarPlantillaObjeto()" style="width:100%;padding:9px;border:1px solid #bcccdc;border-radius:6px;background:#fff">
-                <option value="">-- Selecciona una plantilla técnica/legal --</option>
-                <option value="software">💻 Desarrollo de Software / App (Ley 23 de 1982 / Cesión de Derechos)</option>
-                <option value="diseño">🎨 Diseño Gráfico y Marketing (Autónomo / Código de Comercio)</option>
-                <option value="consultoria">📊 Consultoría y Asesoría Técnica (Sin Subordinación)</option>
-                <option value="servicios">🛠 Prestación de Servicios Generales (Régimen Civil/Comercial)</option>
-              </select>
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título del Proyecto</label>
+              <input id="titulo" placeholder="Ej: Desarrollo de Plataforma E-Commerce" oninput="actualizarClausulasPorModulo()" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
             </div>
 
             <div style="grid-column:1/-1">
-              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Objeto y alcance del contrato</label>
-              <textarea id="objeto" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;min-height:110px" placeholder="Escribe el alcance o selecciona un modelo legal arriba..."></textarea>
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Correo electrónico de la contraparte (Debe estar registrado)</label>
+              <input id="correo_contraparte" type="email" placeholder="contraparte@ejemplo.com" required style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
             </div>
 
             <div>
-              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Valor total (COP)</label>
-              <input id="valor" type="number" placeholder="1500000" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Valor del Contrato (COP)</label>
+              <input id="valor" type="number" value="2000000" placeholder="2000000" oninput="actualizarClausulasPorModulo()" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
             </div>
             <div>
-              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Esquema de pago</label>
-              <select id="forma_pago" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
-                <option value="Pago Único">Pago Único al Finalizar</option>
-                <option value="50/50">50% Anticipo / 50% Entrega</option>
-                <option value="Por Hitos">Por Hitos de Avance</option>
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Esquema de Pago</label>
+              <select id="forma_pago" onchange="actualizarClausulasPorModulo()" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+                <option value="50/50">50% Anticipo en Escrow / 50% a la Entrega</option>
+                <option value="Pago Único">Pago Único 100% en Escrow</option>
+                <option value="Por Hitos">Pago Por Hitos de Avance</option>
               </select>
             </div>
           </div>
-          <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:20px">Guardar contrato y notificar</button>
+
+          <div style="margin-top:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <label style="font-size:14px;font-weight:800;color:#0b2545">Cláusulas del Contrato Generadas (Puedes editarlas):</label>
+              <button onclick="actualizarClausulasPorModulo()" style="background:#f0f4f8;border:1px solid #bcccdc;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">🔄 Restablecer Cláusulas</button>
+            </div>
+            <textarea id="objeto" style="width:100%;padding:14px;border:1px solid #bcccdc;border-radius:8px;min-height:380px;font-family:monospace;font-size:13px;line-height:1.5;background:#fafbfc"></textarea>
+          </div>
+
+          <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:12px 15px;font-weight:800;cursor:pointer;margin-top:20px;font-size:16px">Guardar Contrato y Vincular Partes</button>
         </div>
       </section>
 
+      <!-- LISTA DE CONTRATOS -->
       <section id="view-contratos" style="display:none">
-        <h2 style="margin-bottom:20px">Mis contratos</h2>
+        <h2 style="margin-bottom:20px">Mis Contratos</h2>
         <div id="contractList"></div>
       </section>
 
+      <!-- CALCULADORA -->
       <section id="view-calculadora" style="display:none">
-        <h2 style="margin-bottom:20px">Calculadora de honorarios</h2>
+        <h2 style="margin-bottom:20px">Calculadora de Honorarios</h2>
         <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;max-width:500px">
-          <p style="margin-bottom:10px">Horas estimadas: <input type="number" id="horas" value="40" oninput="calc()" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:80px"></p>
-          <p style="margin-bottom:10px">Tarifa por hora (COP): <input type="number" id="tarifa" value="50000" oninput="calc()" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:120px"></p>
+          <p style="margin-bottom:12px">Horas estimadas: <input type="number" id="horas" value="40" oninput="calc()" style="padding:8px;border-radius:6px;border:1px solid #ccc;width:90px"></p>
+          <p style="margin-bottom:12px">Tarifa por hora (COP): <input type="number" id="tarifa" value="50000" oninput="calc()" style="padding:8px;border-radius:6px;border:1px solid #ccc;width:130px"></p>
           <hr style="margin:15px 0;border:0;border-top:1px solid #eee">
-          <p style="font-size:16px">Valor sugerido del contrato: <b id="base" style="color:#00a6a6">$2,000,000</b></p>
+          <p style="font-size:16px">Valor sugerido del contrato: <b id="base" style="color:#00a6a6">$2,000,000 COP</b></p>
         </div>
       </section>
     </main>
@@ -204,7 +212,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 </div>
 
 <script>
-// --- CONFIGURACIÓN ---
+// --- CONFIGURACIÓN DE SUPABASE Y BACKEND ---
 var SUPABASE_URL = 'https://gftdhhvsjpojxkdyuvpl.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmdGRoaHZzanBvanhrZHl1dnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNDQ5NjQsImV4cCI6MjEwNDYyMDk2NH0.Y5T1C7yJGOWP7Je55qOPY_3oOyvtOLFnGRWZN3nm0wA';
 var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -212,19 +220,108 @@ var BACKEND_URL = 'https://contrato-claro-backend.onrender.com';
 
 function $(id) { return document.getElementById(id); }
 
-// --- PLANTILLAS CON NORMATIVA COLOMBIANA ---
-function aplicarPlantillaObjeto() {
-  var sel = $('plantillaObjeto').value;
-  var txt = $('objeto');
-  if (sel === 'software') {
-    txt.value = "El CONTRATISTA se obliga de forma independiente a desarrollar, probar y entregar el software/aplicación acordado. En cumplimiento de la Ley 23 de 1982 y Ley 1450 de 2011 de Colombia, el CONTRATISTA cede de manera total y exclusiva los derechos patrimoniales de autor sobre el código fuente y entregables al CONTRATANTE una vez verificado el pago completo del contrato.";
-  } else if (sel === 'diseño') {
-    txt.value = "El CONTRATISTA creará y entregará el material gráfico/visual especificado actuando con autonomía técnica y directiva. Los derechos de explotación comercial sobre el arte final serán transferidos al CONTRATANTE únicamente al completarse la liberación de fondos acordada, bajo el amparo del Código de Comercio colombiano.";
-  } else if (sel === 'consultoria') {
-    txt.value = "El CONTRATISTA brindará servicios de asesoría y consultoría técnica profesional sin subordinación ni cumplimiento de horario predeterminado. El servicio se limitará a la entrega de informes estratégicos y diagnósticos bajo la legislación civil y comercial de Colombia.";
-  } else if (sel === 'servicios') {
-    txt.value = "El CONTRATISTA ejecutará las actividades de prestación de servicios estipuladas con sus propios medios, autonomía administrativa y técnica, sin que el presente acuerdo genere relación de trabajo ni prestaciones sociales de carácter laboral entre las partes.";
+// --- MOTOR DE DICCIONARIO DE CLÁUSULAS POR MÓDULO ---
+function obtenerClausulas(modulo, titulo, valor, formaPago) {
+  var valFormatted = '$' + Number(valor || 0).toLocaleString('es-CO') + ' COP';
+  var t = titulo || '[Nombre o Título del Servicio]';
+
+  if (modulo === 'software') {
+    return `CLÁUSULA PRIMERA – OBJETO:
+El CONTRATISTA se obliga a desarrollar y entregar al CONTRATANTE una solución de software consistente en: ${t}, de acuerdo con los requerimientos funcionales y técnicos definidos en el presente contrato.
+
+CLÁUSULA SEGUNDA – ALCANCE DEL SERVICIO:
+El servicio comprende el análisis, diseño, desarrollo, implementación y entrega de la solución contratada. Cualquier funcionalidad adicional no estipulada inicialmente deberá ser previamente acordada por escrito.
+
+CLÁUSULA TERCERA – ENTREGABLES:
+El CONTRATISTA entregará los siguientes productos: [Código Fuente], [Documentación Técnica], [Manual de Usuario] y [Aplicación Desplegada o Ejecutable].
+
+CLÁUSULA CUARTA – PROPIEDAD INTELECTUAL:
+Las partes acuerdan que los derechos patrimoniales sobre los desarrollos realizados específicamente para este contrato serán cedidos de forma exclusiva al CONTRATANTE al verificarse el pago total acordado, según la Ley 23 de 1982 de Colombia.
+
+CLÁUSULA SEXTA – VALOR Y FORMA DE PAGO:
+El CONTRATANTE pagará al CONTRATISTA la suma total de ${valFormatted}, bajo el esquema de: ${formaPago}, custodiado bajo la plataforma Contrato Claro.
+
+CLÁUSULA SÉPTIMA – CAMBIOS DE ALCANCE:
+Las modificaciones o funcionalidades adicionales no incluidas en el alcance inicial serán cotizadas de forma independiente.
+
+CLÁUSULA OCTAVA – GARANTÍA Y SOPORTE:
+El CONTRATISTA brindará soporte técnico durante 30 días posteriores a la entrega final, exclusivamente respecto de errores o fallas atribuibles al código desarrollado.`;
+
+  } else if (modulo === 'diseno') {
+    return `CLÁUSULA PRIMERA – OBJETO:
+El CONTRATISTA se obliga a prestar servicios de diseño gráfico y/o marketing consistentes en: ${t}, de acuerdo con los requerimientos establecidos por el CONTRATANTE.
+
+CLÁUSULA SEGUNDA – ENTREGABLES:
+El CONTRATISTA entregará las piezas gráficas en formatos finales exportados (PNG, JPG, PDF) y los archivos editables originales (AI, PSD, Figma) según corresponda.
+
+CLÁUSULA TERCERA – REVISIÓN Y MODIFICACIONES:
+El CONTRATANTE tendrá derecho a solicitar hasta 3 rondas de modificaciones sobre cada pieza. Cambios sustanciales posteriores se cotizarán por separado.
+
+CLÁUSULA CUARTA – APROBACIÓN DE DISEÑOS:
+Una vez aprobada una pieza por el CONTRATANTE, cualquier modificación posterior implicará una nueva orden de trabajo.
+
+CLÁUSULA QUINTA – PROPIEDAD INTELECTUAL:
+Los derechos de uso comercial sobre las piezas finales serán transferidos al CONTRATANTE una vez liberados los fondos de la custodia.
+
+CLÁUSULA SEXTA – PORTAFOLIO:
+El CONTRATISTA se reserva el derecho de exhibir las piezas creadas únicamente como parte de su portafolio profesional.
+
+CLÁUSULA SÉPTIMA – VALOR Y FORMA DE PAGO:
+El valor total de los servicios es de ${valFormatted}, cancelados mediante: ${formaPago}.`;
+
+  } else if (modulo === 'consultoria') {
+    return `CLÁUSULA PRIMERA – OBJETO:
+El CONTRATISTA se obliga a prestar servicios profesionales de consultoría y asesoría técnica especializada en: ${t}.
+
+CLÁUSULA SEGUNDA – ALCANCE DE LA CONSULTORÍA:
+Los servicios comprenderán el diagnóstico, análisis, reuniones estratégicas, recomendaciones y plan de acción correspondiente.
+
+CLÁUSULA TERCERA – ENTREGABLES:
+Como resultado del servicio, el CONTRATISTA entregará el Informe Final de Diagnóstico y las Recomendaciones Estratégicas acordadas.
+
+CLÁUSULA CUARTA – AUTONOMÍA DEL CONTRATISTA:
+El CONTRATISTA desarrollará sus actividades con total autonomía técnica y profesional, sin subordinación laboral.
+
+CLÁUSULA QUINTA – HONORARIOS Y PAGO:
+El CONTRATANTE pagará por los honorarios la suma de ${valFormatted}, bajo la modalidad: ${formaPago}.
+
+CLÁUSULA SEXTA – CONFIDENCIALIDAD:
+El CONTRATISTA se obliga a mantener absoluta reserva y confidencialidad sobre la información empresarial a la que tenga acceso.`;
+
+  } else {
+    return `CLÁUSULA PRIMERA – OBJETO:
+El CONTRATISTA se obliga a prestar al CONTRATANTE los servicios profesionales de: ${t}.
+
+CLÁUSULA SEGUNDA – DESCRIPCIÓN Y EJECUCIÓN:
+El servicio se ejecutará de forma autónoma cumpliendo los estándares de calidad y tiempos establecidos.
+
+CLÁUSULA TERCERA – OBLIGACIONES DEL CONTRATISTA:
+Ejecutar el objeto contractual, entregar los productos acordados e informar oportunamente cualquier eventualidad.
+
+CLÁUSULA CUARTA – OBLIGACIONES DEL CONTRATANTE:
+Suministrar la información requerida y efectuar el pago pactado a través de la custodia de fondos.
+
+CLÁUSULA QUINTA – VALOR Y PAGO:
+El valor de la prestación del servicio es de ${valFormatted}, pagadero mediante: ${formaPago}.
+
+CLÁUSULA SEXTA – TERMINACIÓN:
+El contrato finalizará por cumplimiento del objeto o por mutuo acuerdo entre las partes.`;
   }
+}
+
+function actualizarClausulasPorModulo() {
+  var mod = $('moduloSelect').value;
+  var tit = $('titulo').value.trim();
+  var val = $('valor').value;
+  var pag = $('forma_pago').value;
+  
+  $('objeto').value = obtenerClausulas(mod, tit, val, pag);
+}
+
+function cargarModulo(moduloKey) {
+  $('moduloSelect').value = moduloKey;
+  showView('crear');
+  actualizarClausulasPorModulo();
 }
 
 // --- VISTAS Y NAVEGACIÓN ---
@@ -241,15 +338,7 @@ function showView(view) {
     $('view-' + v).style.display = v === view ? 'block' : 'none';
   });
   if (view === 'contratos') loadContracts();
-}
-
-function startContract(tipo, plantilla) {
-  $('tipo').value = tipo;
-  if(plantilla) {
-    $('plantillaObjeto').value = plantilla;
-    aplicarPlantillaObjeto();
-  }
-  showView('crear');
+  if (view === 'crear' && !$('objeto').value) actualizarClausulasPorModulo();
 }
 
 // --- AUTENTICACIÓN ---
@@ -275,7 +364,7 @@ $('registerForm').addEventListener('submit', async function(e) {   e.preventDefa
       options: { data: { nombre: $('regNombre').value.trim(), rol:$('regRol').value } }
     });
     if (result.error) throw result.error;
-    alert('Registro exitoso. Procede a iniciar sesión.');
+    alert('Registro exitoso. Inicia sesión ahora.');
     showLogin();
   } catch (err) {
     $('authError').textContent = err.message;
@@ -288,17 +377,17 @@ async function handleLogout() {
   $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
 }
 
-// --- LÓGICA DE CONTRATOS Y ROLES ---
+// --- CREAR CONTRATO CON CLÁUSULAS COMPLETAS ---
 async function createContract() {
-  var tipo = $('tipo').value;
   var titulo = $('titulo').value.trim();
   var objeto = $('objeto').value.trim();
   var valor = parseFloat($('valor').value);
   var forma_pago = $('forma_pago').value;
   var correoContraparte = $('correo_contraparte').value.trim().toLowerCase();
+  var tipoModulo = $('moduloSelect').options[$('moduloSelect').selectedIndex].text;
 
   if (!titulo || !objeto || isNaN(valor) || !correoContraparte) { 
-    alert('Por favor completa todos los campos requeridos, incluyendo el correo de la otra parte.'); 
+    alert('Por favor completa el título, correo de la otra parte y asegúrate de incluir las cláusulas.'); 
     return; 
   }
 
@@ -307,44 +396,49 @@ async function createContract() {
     var user = userResponse.data.user;
     if (!user) throw new Error("Sesión no válida.");
 
-    // Verificar si existe la contraparte por su correo
+    // Buscar contraparte por correo
     var buscaContraparte = await supabase.from('perfiles_usuario').select('id').eq('correo', correoContraparte).maybeSingle();
 
     if (!buscaContraparte.data) {
-      alert('❌ El correo ' + correoContraparte + ' no está registrado. Pídele que cree su cuenta en Contrato Claro primero.');
+      alert('❌ El correo "' + correoContraparte + '" no está registrado. La otra persona debe crear su cuenta en la plataforma primero.');
       return;
     }
 
     var perfilRes = await supabase.from('perfiles_usuario').select('rol').eq('id', user.id).single();
     var miRol = perfilRes.data ? perfilRes.data.rol : 'Freelancer';
     
-    // Determinar el rol opuesto para la otra persona
-    var esMiRolCliente = miRol.toLowerCase().includes('cliente') || miRol.toLowerCase().includes('contratante');
-    var rolContraparte = esMiRolCliente ? 'Freelancer' : 'Cliente / Contratante';
+    var esCliente = miRol.toLowerCase().includes('cliente') || miRol.toLowerCase().includes('contratante');
+    var rolContraparte = esCliente ? 'Freelancer' : 'Cliente / Contratante';
 
-    // Insertar contrato
+    // Guardar contrato
     var response = await supabase.from('contratos').insert([{
-      tipo: tipo, titulo: titulo, objeto: objeto, valor: valor, forma_pago: forma_pago, estado: 'Activo (Fondeado)'
+      tipo: tipoModulo,
+      titulo: titulo,
+      objeto: objeto, // Se guardan TODAS las cláusulas
+      valor: valor,
+      forma_pago: forma_pago,
+      estado: 'Activo (Fondeado)'
     }]).select();
 
     if (response.error) throw response.error;
     var nuevoContrato = response.data[0];
 
-    // Vincular ambas partes al contrato
+    // Asignar ambas partes
     await supabase.from('partes_contrato').insert([
       { contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol },
       { contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte }
     ]);
 
-    alert('✅ ¡Contrato creado y vinculado exitosamente con ' + correoContraparte + '!');
-    $('titulo').value = ''; $('objeto').value = '';$('valor').value = ''; $('correo_contraparte').value = '';$('plantillaObjeto').value = '';
+    alert('✅ ¡Contrato guardado con cláusulas completas y vinculado con ' + correoContraparte + '!');
+    $('titulo').value = '';$('correo_contraparte').value = '';
     showView('contratos');
 
   } catch (err) {
-    alert('Error al guardar: ' + err.message);
+    alert('Error al guardar contrato: ' + err.message);
   }
 }
 
+// --- VER CONTRATOS Y CONTROL DE LIBERACIÓN DE FONDOS ---
 async function loadContracts() {
   var container = $('contractList');
   container.innerHTML = '<p style="color:#627d98;">Cargando tus contratos...</p>';
@@ -362,7 +456,7 @@ async function loadContracts() {
     var registros = response.data;
 
     if (!registros || registros.length === 0) {
-      container.innerHTML = `<div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;text-align:center;"><p style="color:#627d98;">No tienes contratos asignados.</p></div>`;
+      container.innerHTML = `<div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;text-align:center;"><p style="color:#627d98;">No tienes contratos asignados actualmente.</p></div>`;
       return;
     }
 
@@ -371,39 +465,41 @@ async function loadContracts() {
       var c = item.contratos;
       var miRolEnContrato = item.rol_en_contrato || '';
       
-      // FILTRO DE SEGURIDAD PARA DIFERENCIAR CLIENTE DE FREELANCER
+      // CONTROL DE ROL: Solo el Cliente/Contratante ve el botón de liberar
       var esCliente = miRolEnContrato.toLowerCase().includes('cliente') || miRolEnContrato.toLowerCase().includes('contratante');
       
       var accionEscrow = '';
 
       if (c.estado === 'Finalizado') {
         if (esCliente) {
-          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">✅ Dinero entregado al freelancer</span>`;
+          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:800;">✅ Dinero entregado al freelancer</span>`;
         } else {
-          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">🎉 Pago recibido en tu cuenta</span>`;
+          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:800;">🎉 Pago recibido en tu cuenta</span>`;
         }
       } else {
         if (esCliente) {
-          // SOLO EL CLIENTE VE ESTE BOTÓN
-          accionEscrow = `<button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer;">🔓 Liberar Fondos al Freelancer</button>`;
+          // SOLO CLIENTE VE EL BOTÓN
+          accionEscrow = `<button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;">🔓 Liberar Fondos al Freelancer</button>`;
         } else {
-          // EL FREELANCER NUNCA VE EL BOTÓN
-          accionEscrow = `<span style="background:#f0f4f8;color:#627d98;padding:8px 12px;border-radius:6px;font-size:13px;font-style:italic;">⏳ Esperando que el cliente libere el pago</span>`;
+          // FREELANCER SOLAMENTE VE EL ESTADO
+          accionEscrow = `<span style="background:#f0f4f8;color:#627d98;padding:8px 12px;border-radius:6px;font-size:13px;font-style:italic;font-weight:600;">⏳ Esperando que el cliente libere el pago</span>`;
         }
       }
 
       return `
-        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px;margin-bottom:12px;">
+        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px;margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <h3 style="margin:0;font-size:16px;">${c.titulo}</h3>
             <span style="background:#e9fbf1;color:#087c38;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;">$${Number(c.valor || 0).toLocaleString('es-CO')} COP</span>
           </div>
-          <p style="font-size:13px;color:#486581;margin-bottom:12px;line-height:1.4">${c.objeto}</p>
-          <div style="display:flex;gap:12px;font-size:12px;color:#627d98;margin-bottom:12px;flex-wrap:wrap;">
-            <span>Tu rol: <b>${miRolEnContrato}</b></span> |
-            <span>Estado: <b>${c.estado}</b></span>
+          <div style="font-size:12px;color:#627d98;margin-bottom:12px;">
+            <span>Tipo: <b>${c.tipo}</b></span> | <span>Tu rol: <b>${miRolEnContrato}</b></span> | <span>Estado: <b>${c.estado}</b></span>
           </div>
-          <div style="border-top:1px solid #f0f4f8;padding-top:15px;margin-top:10px;">
+          <details style="background:#f8fafc;padding:10px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:12px">
+            <summary style="font-size:13px;font-weight:700;color:#0369a1;cursor:pointer">📜 Ver Cláusulas Completas del Contrato</summary>
+            <pre style="white-space:pre-wrap;font-family:sans-serif;font-size:12px;margin-top:10px;color:#334e68;line-height:1.4">${c.objeto}</pre>
+          </details>
+          <div style="border-top:1px solid #f0f4f8;padding-top:12px;">
             ${accionEscrow}
           </div>
         </div>`;
@@ -414,7 +510,7 @@ async function loadContracts() {
 }
 
 async function liberarEscrow(contratoId) {
-  if (!confirm('¿Estás seguro de que deseas liberar los fondos? Esta acción transferirá el dinero al freelancer.')) return;
+  if (!confirm('¿Confirmas la liberación de fondos al freelancer? El dinero pasará inmediatamente a su cuenta.')) return;
   try {
     var response = await fetch(`${BACKEND_URL}/api/escrow/liberar`, {
       method: 'POST',
@@ -422,7 +518,7 @@ async function liberarEscrow(contratoId) {
       body: JSON.stringify({ contrato_id: contratoId })
     });
     var data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Error al procesar.');
+    if (!response.ok) throw new Error(data.error || 'Error al procesar la liberación.');
     alert('¡Fondos liberados exitosamente!');
     loadContracts();
   } catch (err) {

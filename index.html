@@ -269,7 +269,16 @@ async function createContract() {
 
     if (!user) throw new Error("No hay una sesión activa.");
 
-    // Guardar en la tabla 'contratos'
+    // 1. Consultar el perfil del usuario para conocer su rol (Cliente o Freelancer)
+    var perfilRes = await supabase
+      .from('perfiles_usuario')
+      .select('rol')
+      .eq('id', user.id)
+      .single();
+
+    var miRol = perfilRes.data ? perfilRes.data.rol : 'Creador';
+
+    // 2. Guardar en la tabla 'contratos'
     var response = await supabase.from('contratos').insert([
       {
         tipo: tipo,
@@ -285,20 +294,21 @@ async function createContract() {
 
     var nuevoContrato = response.data[0];
 
-    // Registrar relación en 'partes_contrato'
+    // 3. Vincular usuario con su rol exacto en 'partes_contrato'
     var relacionResponse = await supabase.from('partes_contrato').insert([
       {
         contrato_id: nuevoContrato.id,
         perfil_id: user.id,
-        rol_en_contrato: 'Creador'
+        rol_en_contrato: miRol
       }
     ]);
 
     if (relacionResponse.error) throw relacionResponse.error;
 
-    alert('¡Contrato creado y vinculado correctamente!');
+    alert('¡Contrato creado correctamente!');
     $('titulo').value = '';
-    $('objeto').value = '';$('valor').value = '';
+    $('objeto').value = '';
+    $('valor').value = '';
     showView('contratos');
 
   } catch (err) {
@@ -309,27 +319,47 @@ async function createContract() {
 // 2. Cargar Contratos desde la tabla 'contratos'
 async function loadContracts() {
   var container = $('contractList');
-  container.innerHTML = '<p style="color:#627d98;">Cargando contratos...</p>';
+  container.innerHTML = '<p style="color:#627d98;">Cargando tus contratos...</p>';
 
   try {
+    var userResponse = await supabase.auth.getUser();
+    var user = userResponse.data.user;
+
+    if (!user) throw new Error("No hay sesión activa.");
+
+    // Traer solo las relaciones en partes_contrato que pertenecen al usuario activo
     var response = await supabase
-      .from('contratos')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from('partes_contrato')
+      .select('rol_en_contrato, contratos(*)')
+      .eq('perfil_id', user.id);
 
     if (response.error) throw response.error;
 
-    var contratos = response.data;
+    var registros = response.data;
 
-    if (!contratos || contratos.length === 0) {
+    if (!registros || registros.length === 0) {
       container.innerHTML = `
         <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px;text-align:center;">
-          <p style="color:#627d98;">No tienes contratos registrados.</p>
+          <p style="color:#627d98;">No tienes contratos asignados.</p>
         </div>`;
       return;
     }
 
-    container.innerHTML = contratos.map(function(c) {
+    container.innerHTML = registros.map(function(item) {
+      var c = item.contratos;
+      var miRolEnContrato = item.rol_en_contrato;
+
+      // Condición: Solo el cliente/contratante puede liberar fondos
+      var esCliente = miRolEnContrato && miRolEnContrato.toLowerCase().includes('cliente');
+
+      var accionEscrow = esCliente
+        ? `<button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">
+             🔓 Liberar Fondos
+           </button>`
+        : `<span style="font-size:12px;color:#627d98;font-style:italic;background:#f0f4f8;padding:6px 10px;border-radius:6px;display:inline-block;">
+             ⏳ Fondos en custodia (esperando aprobación del Cliente)
+           </span>`;
+
       return `
         <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px;margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -339,15 +369,14 @@ async function loadContracts() {
             </span>
           </div>
           <p style="font-size:13px;color:#486581;margin-bottom:10px;">${c.objeto}</p>
-          <div style="display:flex;gap:12px;font-size:12px;color:#627d98;margin-bottom:12px;">
+          <div style="display:flex;gap:12px;font-size:12px;color:#627d98;margin-bottom:12px;flex-wrap:wrap;">
             <span>Tipo: <b>${c.tipo}</b></span>
             <span>Pago: <b>${c.forma_pago}</b></span>
             <span>Estado: <b>${c.estado}</b></span>
+            <span>Tu rol: <b>${miRolEnContrato}</b></span>
           </div>
           <div style="border-top:1px solid #f0f4f8;padding-top:10px;margin-top:10px;">
-            <button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">
-              🔓 Liberar Fondos
-            </button>
+            ${accionEscrow}
           </div>
         </div>`;
     }).join('');

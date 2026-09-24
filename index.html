@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contrato Claro - Plataforma Freelance con Hitos</title>
+<title>Contrato Claro - Plataforma Freelance con Hitos y Disputas</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -29,6 +29,12 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 .badge-modulo{background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px}
 .hito-row{display:flex;gap:10px;margin-bottom:8px;align-items:center}
 .hito-row input{padding:8px;border:1px solid #bcccdc;border-radius:6px;font-size:13px}
+.disputa-box{background:#fff5f5;border:1px solid #feb2b2;border-radius:10px;padding:16px;margin-top:12px}
+.badge-status{display:inline-block;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800;text-transform:uppercase}
+.status-abierta{background:#fef3c7;color:#92400e}
+.status-resuelta{background:#d1fae5;color:#065f46}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(11,37,69,0.6);display:none;align-items:center;justify-content:center;z-index:9999}
+.modal-card{background:#fff;border-radius:14px;width:100%;max-width:550px;padding:24px;max-height:90vh;overflow-y:auto}
 </style>
 </head>
 <body>
@@ -107,37 +113,37 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
       <!-- INICIO -->
       <section id="view-inicio">
         <div style="background:linear-gradient(115deg,#0b2545,#124e78);padding:28px 30px;border-radius:17px;color:#fff;margin-bottom:29px">
-          <h1 style="font-size:26px;margin:0 0 6px">Contratos Modulares con Pago por Hitos</h1>
-          <p style="opacity:0.87;margin:0">Selecciona una categoría para cargar las cláusulas e hitos prediseñados.</p>
+          <h1 style="font-size:26px;margin:0 0 6px">Contratos Modulares, Hitos y Módulo de Disputas</h1>
+          <p style="opacity:0.87;margin:0">Gestión integral de contratos freelance con mediación directa, custodia y registro de evidencias.</p>
         </div>
         
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px">
           <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
             <span class="badge-modulo">Módulo 1</span>
             <h3 style="margin:0 0 6px;font-size:16px">💻 Desarrollo Software / App</h3>
-            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Código fuente, propiedad intelectual y 3 hitos de desarrollo (Diseño, Dev, QA).</p>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Código fuente, propiedad intelectual, 3 hitos y cláusula de disputas.</p>
             <button onclick="cargarModulo('software')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Contrato</button>
           </div>
 
           <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
             <span class="badge-modulo">Módulo 2</span>
             <h3 style="margin:0 0 6px;font-size:16px">🎨 Diseño Gráfico y Marketing</h3>
-            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Revisiones, derechos de autor sobre editables y 2 hitos de entrega.</p>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Revisiones, archivos editables e hitos protegidos por custodia.</p>
             <button onclick="cargarModulo('diseno')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Contrato</button>
           </div>
 
           <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px">
             <span class="badge-modulo">Módulo 3</span>
             <h3 style="margin:0 0 6px;font-size:16px">📊 Consultoría Técnica</h3>
-            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Confidencialidad (NDA), informes periódicos y pagos por fases.</p>
+            <p style="font-size:12px;color:#627d98;margin-bottom:14px">Acuerdos NDA, informes técnicos y gestión de diferencias.</p>
             <button onclick="cargarModulo('consultoria')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer">Generar Contrato</button>
           </div>
         </div>
       </section>
 
-      <!-- CREACIÓN Y CONFIGURACIÓN DE HITOS -->
+      <!-- CREACIÓN Y CONFIGURACIÓN -->
       <section id="view-crear" style="display:none">
-        <h2 style="margin-bottom:16px">Editor Modular de Contratos</h2>
+        <h2 style="margin-bottom:16px">Editor Modular de Contratos y Disputas</h2>
         <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
           
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px">
@@ -161,27 +167,50 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
             </div>
           </div>
 
-          <!-- SECCIÓN DE HITOS DE PAGO -->
+          <!-- HITOS -->
           <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:18px;margin-bottom:20px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
               <div>
                 <h4 style="font-size:15px;color:#0b2545">🎯 Desglose de Hitos del Contrato</h4>
-                <p style="font-size:12px;color:#627d98">Puedes editar la descripción y el precio de cada hito a tu gusto.</p>
+                <p style="font-size:12px;color:#627d98">Modifica entregables y valores.</p>
               </div>
               <button onclick="agregarHito()" style="background:#087f80;color:#fff;border:0;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">＋ Agregar Hito</button>
             </div>
-
             <div id="hitosContainer"></div>
-
             <div style="border-top:1px solid #e2e8f0;padding-top:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
               <span style="font-size:13px;font-weight:800;color:#334e68">VALOR TOTAL DEL CONTRATO:</span>
               <span id="sumaTotalHitos" style="font-size:16px;font-weight:800;color:#00a6a6">$0 COP</span>
             </div>
           </div>
 
+          <!-- CONFIGURACIÓN DEL MÓDULO DE DISPUTAS Y CONTROVERSIAS -->
+          <div style="background:#fefce8;border:1px solid #fef08a;border-radius:10px;padding:18px;margin-bottom:20px">
+            <h4 style="font-size:15px;color:#854d0e;margin-bottom:6px">⚖️ Módulo de Solución de Controversias</h4>
+            <p style="font-size:12px;color:#a16207;margin-bottom:12px">Define los términos para la negociación y escalación en caso de desacuerdo.</p>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:12px;font-weight:800;margin-bottom:4px">Plazo de Negociación Directa</label>
+                <select id="diasNegociacion" onchange="actualizarClausulasPorModulo()" style="width:100%;padding:8px;border:1px solid #fde047;border-radius:6px;font-size:13px">
+                  <option value="5">5 días hábiles</option>
+                  <option value="10" selected>10 días hábiles</option>
+                  <option value="15">15 días hábiles</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;font-weight:800;margin-bottom:4px">Mecanismo de Escalación</label>
+                <select id="mecanismoEscalacion" onchange="actualizarClausulasPorModulo()" style="width:100%;padding:8px;border:1px solid #fde047;border-radius:6px;font-size:13px">
+                  <option value="Conciliación">Centro de Conciliación Legal</option>
+                  <option value="Arbitraje">Tribunal de Arbitraje</option>
+                  <option value="Jurisdicción Ordinaria">Jurisdicción Ordinaria (Jueces)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <!-- CLÁUSULAS GENERADAS -->
           <div style="margin-top:20px">
-            <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#0b2545">Cláusulas del Contrato Adaptadas al Módulo (Editables):</label>
+            <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#0b2545">Cláusulas del Contrato con Módulo de Disputas (Editables):</label>
             <textarea id="objeto" style="width:100%;padding:14px;border:1px solid #bcccdc;border-radius:8px;min-height:280px;font-family:monospace;font-size:13px;line-height:1.5;background:#fafbfc"></textarea>
           </div>
 
@@ -189,9 +218,9 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
         </div>
       </section>
 
-      <!-- MIS CONTRATOS E HITOS -->
+      <!-- MIS CONTRATOS, HITOS Y DISPUTAS -->
       <section id="view-contratos" style="display:none">
-        <h2 style="margin-bottom:20px">Mis Contratos e Hitos</h2>
+        <h2 style="margin-bottom:20px">Mis Contratos, Hitos y Disputas</h2>
         <div id="contractList"></div>
       </section>
 
@@ -209,6 +238,56 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
   </div>
 </div>
 
+<!-- MODAL PARA REPORTAR O EDITAR DISPUTA -->
+<div id="disputaModal" class="modal-overlay">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+      <h3 style="color:#0b2545;font-size:18px">🚨 Reportar Disputa / Controversia</h3>
+      <button onclick="cerrarModalDisputa()" style="background:none;border:0;font-size:18px;cursor:pointer;font-weight:800">✕</button>
+    </div>
+    
+    <input type="hidden" id="disputaContratoId">
+
+    <div class="auth-field">
+      <label>Motivo Principal</label>
+      <select id="dispMotivo">
+        <option value="Incumplimiento de pago">Incumplimiento de pago</option>
+        <option value="Incumplimiento del alcance">Incumplimiento del alcance</option>
+        <option value="Trabajo adicional no remunerado">Trabajo adicional no remunerado</option>
+        <option value="Retraso en la entrega">Retraso en la entrega</option>
+        <option value="Calidad del entregable">Calidad del entregable</option>
+        <option value="Cancelación del contrato">Cancelación del contrato</option>
+        <option value="Otro">Otro motivo</option>
+      </select>
+    </div>
+
+    <div class="auth-field">
+      <label>Descripción detallada del conflicto</label>
+      <textarea id="dispDescripcion" rows="4" style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc" placeholder="Explica exactamente qué ocurrió..."></textarea>
+    </div>
+
+    <div class="auth-field">
+      <label>Valor reclamado (COP)</label>
+      <input type="number" id="dispMonto" placeholder="Ej: 500000">
+    </div>
+
+    <div class="auth-field">
+      <label>Propuesta inicial de solución</label>
+      <input type="text" id="dispPropuesta" placeholder="Ej: Pago parcial del 50% y entrega del avance actual">
+    </div>
+
+    <div style="border-top:1px solid #eee;padding-top:12px;margin-top:12px">
+      <h5 style="font-size:13px;margin-bottom:8px">Cargar Evidencia (Link / Captura / Documento)</h5>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="evidenciaNombre" placeholder="Nombre (ej: Entregable Hito 1)" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px">
+        <input id="evidenciaUrl" placeholder="URL o Detalle de prueba" style="flex:2;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px">
+      </div>
+    </div>
+
+    <button onclick="guardarDisputa()" class="btn-primary" style="margin-top:15px;background:#b42318">Enviar Notificación de Disputa</button>
+  </div>
+</div>
+
 <script>
 var SUPABASE_URL = 'https://gftdhhvsjpojxkdyuvpl.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmdGRoaHZzanBvanhrZHl1dnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNDQ5NjQsImV4cCI6MjEwNDYyMDk2NH0.Y5T1C7yJGOWP7Je55qOPY_3oOyvtOLFnGRWZN3nm0wA';
@@ -217,7 +296,6 @@ var BACKEND_URL = 'https://contrato-claro-backend.onrender.com';
 
 function $(id) { return document.getElementById(id); }
 
-// --- PLANTILLAS DE HITOS POR MÓDULO ---
 var PLANTILLAS_HITOS = {
   software: [
     { titulo: 'Hito 1: Prototipeado, Arquitectura y UI/UX', monto: 1000000 },
@@ -264,7 +342,6 @@ function renderHitosInputs() {
   actualizarClausulasPorModulo();
 }
 
-// Actualiza el arreglo sin volver a re-renderizar los HTML inputs (solución al bug de edición)
 function actualizarHito(index, campo, valor) {
   if (campo === 'monto') {
     listadoHitos[index].monto = parseFloat(valor) || 0;
@@ -290,55 +367,41 @@ function eliminarHito(index) {
   renderHitosInputs();
 }
 
-// --- CLÁUSULAS ESPECÍFICAS SEGÚN MÓDULO ---
+// --- CLÁUSULAS CON MÓDULO DE DISPUTAS ---
 function obtenerClausulas(modulo, titulo, valorTotal) {
   var valFormatted = '$' + Number(valorTotal || 0).toLocaleString('es-CO') + ' COP';
   var t = titulo || '[Nombre del Proyecto]';
+  var dias = $('diasNegociacion') ?$('diasNegociacion').value : '10';
+  var mecanismo = $('mecanismoEscalacion') ?$('mecanismoEscalacion').value : 'Conciliación';
+
+  var clausulasEspecificas = '';
 
   if (modulo === 'software') {
-    return `CLÁUSULA PRIMERA – OBJETO:
+    clausulasEspecificas = `CLÁUSULA PRIMERA – OBJETO:
 El CONTRATISTA se obliga a desarrollar el software denominado "${t}", entregando el código fuente, documentaciones técnicas y funcionalidades acordadas.
 
 CLÁUSULA SEGUNDA – ESQUEMA DE HITOS Y CUSTODIA:
-El valor total de ${valFormatted} se encuentra depositado en custodia. Cada hito de desarrollo requerirá revisión y aprobación por parte del CONTRATANTE para realizar su desembolso.
-
-CLÁUSULA TERCERA – PROPIEDAD INTELECTUAL Y CÓDIGO FUENTE:
-La totalidad de los derechos patrimoniales sobre el software y código fuente se transferirán automáticamente al CONTRATANTE a medida que se liberen los hitos correspondientes.
-
-CLÁUSULA CUARTA – GARANTÍA Y ERRORES:
-El CONTRATISTA se compromete a solucionar cualquier falla o error técnico (bug) sin costo adicional durante un período de 30 días posteriores a la entrega del último hito.`;
-  } 
-  
-  if (modulo === 'diseno') {
-    return `CLÁUSULA PRIMERA – OBJETO:
+El valor total de ${valFormatted} se encuentra depositado en custodia. Cada hito de desarrollo requerirá revisión y aprobación por parte del CONTRATANTE para realizar su desembolso.`;
+  } else if (modulo === 'diseno') {
+    clausulasEspecificas = `CLÁUSULA PRIMERA – OBJETO:
 El CONTRATISTA elaborará las piezas gráficas, diseños y material visual especificado bajo el título "${t}".
 
 CLÁUSULA SEGUNDA – ENTREGABLES Y EDITABLES:
-Con la liberación de cada hito, el CONTRATANTE recibirá los archivos finales y fuentes editables (Figma, Illustrator, Photoshop, etc.) con licencia de uso comercial ilimitada.
-
-CLÁUSULA TERCERA – REVISIONES Y AJUSTES:
-Se incluyen hasta tres (3) rondas de modificaciones menores por cada hito. Cambios conceptuales o adicionales fuera de lo pactado requerirán un nuevo hito.`;
-  } 
-
-  if (modulo === 'consultoria') {
-    return `CLÁUSULA PRIMERA – OBJETO:
-El CONTRATISTA prestará servicios profesionales de consultoría técnica y asesoría para el proyecto "${t}".
-
-CLÁUSULA SEGUNDA – CONFIDENCIALIDAD (NDA):
-Toda la información técnica, financiera y comercial compartida será de carácter estrictamente confidencial y protegida por la normatividad vigente.
-
-CLÁUSULA TERCERA – INFORMES Y ACEPTACIÓN:
-La liberación de fondos de cada hito de consultoría constituye la certificación formal por parte del CONTRATANTE de haber recibido a satisfacción el informe técnico correspondiente.`;
-  } 
-
-  return `CLÁUSULA PRIMERA – OBJETO:
+Con la liberación de cada hito, el CONTRATANTE recibirá los archivos fuentes editables con licencia de uso comercial ilimitada.`;
+  } else {
+    clausulasEspecificas = `CLÁUSULA PRIMERA – OBJETO:
 El CONTRATISTA se obliga a prestar los servicios profesionales independientes para "${t}".
 
 CLÁUSULA SEGUNDA – PAGO POR HITOS:
-El monto total del contrato es de ${valFormatted}, desembolsado por hitos una vez verificada la ejecución de los entregables parciales.
+El monto total del contrato es de ${valFormatted}, desembolsado por hitos una vez verificada la ejecución de los entregables.`;
+  }
 
-CLÁUSULA TERCERA – AUTONOMÍA JURÍDICA:
-El CONTRATISTA actuará con plena autonomía técnica y administrativa, sin que exista relación de subordinación ni vínculo laboral.`;
+  var clausulaDisputas = `\n\nCLÁUSULA TERCERA – MECANISMO DE SOLUCIÓN DE CONTROVERSIAS Y DISPUTAS:
+Las partes acuerdan que cualquier diferencia o desacuerdo será gestionado inicialmente mediante un procedimiento de NEGOCIACIÓN DIRECTA registrado en la plataforma por un plazo máximo de ${dias} días hábiles. En este periodo, los fondos de la custodia permanecerán congelados.
+
+De no alcanzarse un acuerdo mutuo expreso, la controversia se someterá al mecanismo de ${mecanismo.toUpperCase()}, conforme a la legislación colombiana aplicable.`;
+
+  return clausulasEspecificas + clausulaDisputas;
 }
 
 function actualizarClausulasPorModulo() {
@@ -414,7 +477,7 @@ async function handleLogout() {
   $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
 }
 
-// --- CREAR CONTRATO E INSERTAR HITOS ---
+// --- CREAR CONTRATO ---
 async function createContract() {
   var titulo = $('titulo').value.trim();
   var objeto = $('objeto').value.trim();
@@ -444,7 +507,6 @@ async function createContract() {
     var esCliente = miRol.toLowerCase().includes('cliente') || miRol.toLowerCase().includes('contratante');
     var rolContraparte = esCliente ? 'Freelancer' : 'Cliente / Contratante';
 
-    // 1. Guardar Contrato
     var response = await supabase.from('contratos').insert([{
       tipo: tipoModulo,
       titulo: titulo,
@@ -457,13 +519,11 @@ async function createContract() {
     if (response.error) throw response.error;
     var nuevoContrato = response.data[0];
 
-    // 2. Insertar partes del contrato
     await supabase.from('partes_contrato').insert([
       { contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol },
       { contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte }
     ]);
 
-    // 3. Insertar Hitos en la tabla hitos_contrato
     var payloadHitos = listadoHitos.map(h => ({
       contrato_id: nuevoContrato.id,
       titulo: h.titulo,
@@ -482,10 +542,10 @@ async function createContract() {
   }
 }
 
-// --- VER CONTRATOS Y LIBERACIÓN INDIVIDUAL DE HITOS ---
+// --- VER CONTRATOS, HITOS Y DISPUTAS ---
 async function loadContracts() {
   var container = $('contractList');
-  container.innerHTML = '<p style="color:#627d98;">Cargando contratos e hitos...</p>';
+  container.innerHTML = '<p style="color:#627d98;">Cargando contratos, hitos y disputas...</p>';
 
   try {
     var userResponse = await supabase.auth.getUser();
@@ -507,6 +567,12 @@ async function loadContracts() {
     var hitosRes = await supabase.from('hitos_contrato').select('*');
     var todosLosHitos = hitosRes.data || [];
 
+    var disputasRes = await supabase.from('disputas').select('*');
+    var todasLasDisputas = disputasRes.data || [];
+
+    var evidenciasRes = await supabase.from('evidencias_disputa').select('*');
+    var todasLasEvidencias = evidenciasRes.data || [];
+
     container.innerHTML = registros.map(function(item) {
       if(!item.contratos) return '';
       var c = item.contratos;
@@ -514,6 +580,10 @@ async function loadContracts() {
       var esCliente = miRolEnContrato.toLowerCase().includes('cliente') || miRolEnContrato.toLowerCase().includes('contratante');
 
       var hitosDelContrato = todosLosHitos.filter(h => h.contrato_id === c.id);
+      var disputasDelContrato = todasLasDisputas.filter(d => d.contrato_id === c.id);
+      
+      // VERIFICAR SI HAY DISPUTA ACTIVA QUE BLOQUEE EL PAGO
+      var disputaActiva = disputasDelContrato.find(d => d.estado === 'ABIERTA' || d.estado === 'EN_NEGOCIACION');
 
       var renderHitosHTML = hitosDelContrato.map(function(h) {
         var esPagado = h.estado === 'Liberado';
@@ -521,6 +591,8 @@ async function loadContracts() {
 
         if (esPagado) {
           botonAccion = `<span style="color:#087c38;font-weight:800;font-size:12px">✅ Hito Pagado</span>`;
+        } else if (disputaActiva) {
+          botonAccion = `<span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800">🔒 Bloqueado (Disputa Activa)</span>`;
         } else {
           if (esCliente) {
             botonAccion = `<button onclick="liberarHito('${h.id}', '${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">🔓 Liberar Este Hito ($${Number(h.monto).toLocaleString('es-CO')} COP)</button>`;
@@ -539,31 +611,173 @@ async function loadContracts() {
           </div>`;
       }).join('');
 
+      // RENDERIZAR VISTA DE DISPUTAS VINCULADAS
+      var renderDisputasHTML = disputasDelContrato.map(function(d) {
+        var esIniciador = d.iniciador_id === user.id;
+        var evidencias = todasLasEvidencias.filter(e => e.disputa_id === d.id);
+
+        var evidenciasHTML = evidencias.map(e => `
+          <div style="font-size:11px;color:#475569;margin-top:4px">
+            📎 <b>${e.nombre_archivo}:</b> <a href="${e.url_o_contenido}" target="_blank" style="color:#0284c7">${e.url_o_contenido}</a> 
+            <span style="color:#94a3b8">(Hash SHA-256: ${e.hash_verificacion ? e.hash_verificacion.substring(0,10) + '...' : 'N/A'})</span>
+          </div>
+        `).join('');
+
+        var botonResolver = '';
+        if (d.estado === 'ABIERTA' && !esIniciador) {
+          botonResolver = `<button onclick="aceptarSolucionDisputa('${d.id}')" style="background:#16a34a;color:#fff;border:0;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;margin-top:8px">🤝 Aceptar Acuerdo y Resolver Disputa</button>`;
+        } else if (d.estado === 'ABIERTA' && esIniciador) {
+          botonResolver = `<span style="font-size:12px;color:#d97706;font-weight:700">⏳ Esperando respuesta de la contraparte...</span>`;
+        }
+
+        return `
+          <div class="disputa-box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span class="badge-status ${d.estado === 'RESUELTA' ? 'status-resuelta' : 'status-abierta'}">Disputa ${d.estado}</span>
+              <span style="font-size:11px;color:#64748b">${new Date(d.created_at).toLocaleDateString()}</span>
+            </div>
+            <p style="font-size:13px;font-weight:700;color:#991b1b">Motivo: ${d.motivo}</p>
+            <p style="font-size:12px;color:#334155;margin:4px 0">${d.descripcion}</p>
+            <p style="font-size:12px;color:#0369a1"><b>Monto Reclamado:</b> $${Number(d.monto_reclamado || 0).toLocaleString('es-CO')} COP</p>
+            <p style="font-size:12px;color:#15803d"><b>Propuesta:</b> ${d.propuesta_solucion || 'Sin propuesta'}</p>
+            
+            ${evidenciasHTML ? `<div style="margin-top:6px;border-top:1px dashed #cbd5e1;padding-top:4px">${evidenciasHTML}</div>` : ''}
+            <div>${botonResolver}</div>
+          </div>`;
+      }).join('');
+
       return `
-        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div style="background:#fff;border:1px solid ${disputaActiva ? '#fca5a5' : '#d9e2ec'};border-radius:14px;padding:20px;margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <h3 style="margin:0;font-size:16px;">${c.titulo}</h3>
             <span style="background:#e9fbf1;color:#087c38;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;">Total: $${Number(c.valor || 0).toLocaleString('es-CO')} COP</span>
           </div>
           <div style="font-size:12px;color:#627d98;margin-bottom:12px;">
-            <span>Rol: <b>${miRolEnContrato}</b></span> | <span>Estado Contrato: <b>${c.estado}</b></span>
+            <span>Rol: <b>${miRolEnContrato}</b></span> | <span>Estado: <b>${c.estado}</b></span>
           </div>
 
           <div style="background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;margin-top:10px">
             <h4 style="font-size:13px;margin-bottom:8px;color:#334e68">Entregables e Hitos de Pago:</h4>
             ${renderHitosHTML || '<p style="font-size:12px;color:#999">No se detallaron hitos.</p>'}
           </div>
+
+          <div style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <h4 style="font-size:13px;color:#0b2545">⚖️ Módulo de Disputas del Contrato:</h4>
+              <button onclick="abrirModalDisputa('${c.id}')" style="background:#ef4444;color:#fff;border:0;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🚨 Reportar Disputa</button>
+            </div>
+            ${renderDisputasHTML || '<p style="font-size:12px;color:#94a3b8;margin-top:4px">Sin controversias reportadas.</p>'}
+          </div>
         </div>`;
     }).join('');
   } catch (err) {
-    container.innerHTML = '<p style="color:#b42318;">Error al cargar contratos: ' + err.message + '</p>';
+    container.innerHTML = '<p style="color:#b42318;">Error al cargar datos: ' + err.message + '</p>';
   }
 }
 
-// --- LIBERAR UN HITO ESPECÍFICO ---
-async function liberarHito(hitoId, contratoId) {
-  if (!confirm('¿Deseas liberar los fondos correspondientes a este hito específico al freelancer?')) return;
+// --- GESTIÓN DE DISPUTAS ---
+function abrirModalDisputa(contratoId) {
+  $('disputaContratoId').value = contratoId;
+  $('disputaModal').style.display = 'flex';
+}
+
+function cerrarModalDisputa() {
+  $('disputaModal').style.display = 'none';
+}
+
+async function generarHashSHA256(texto) {
+  var msgUint8 = new TextEncoder().encode(texto);
+  var hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  var hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function guardarDisputa() {
+  var contratoId = $('disputaContratoId').value;
+  var motivo = $('dispMotivo').value;
+  var descripcion = $('dispDescripcion').value.trim();
+  var monto = $('dispMonto').value;
+  var propuesta = $('dispPropuesta').value.trim();
+
+  var evNombre = $('evidenciaNombre').value.trim();
+  var evUrl = $('evidenciaUrl').value.trim();
+
+  if (!descripcion) {
+    alert('Ingresa una descripción del conflicto.');
+    return;
+  }
+
   try {
+    var userResponse = await supabase.auth.getUser();
+    var user = userResponse.data.user;
+
+    // 1. Guardar la Disputa
+    var dispRes = await supabase.from('disputas').insert([{
+      contrato_id: contratoId,
+      iniciador_id: user.id,
+      motivo: motivo,
+      descripcion: descripcion,
+      monto_reclamado: parseFloat(monto) || 0,
+      propuesta_solucion: propuesta,
+      estado: 'ABIERTA',
+      aceptado_por_iniciador: true,
+      aceptado_por_contraparte: false
+    }]).select();
+
+    if (dispRes.error) throw dispRes.error;
+    var nuevaDisputa = dispRes.data[0];
+
+    // 2. Guardar Evidencia con Hash si existe
+    if (evNombre && evUrl) {
+      var hashVal = await generarHashSHA256(evNombre + evUrl + new Date().toISOString());
+      await supabase.from('evidencias_disputa').insert([{
+        disputa_id: nuevaDisputa.id,
+        usuario_id: user.id,
+        nombre_archivo: evNombre,
+        url_o_contenido: evUrl,
+        hash_verificacion: hashVal
+      }]);
+    }
+
+    alert('🚨 Disputa registrada con éxito. Se ha notificado a la contraparte y congelado los pagos.');
+    cerrarModalDisputa();
+    loadContracts();
+  } catch (err) {
+    alert('Error al registrar la disputa: ' + err.message);
+  }
+}
+
+async function aceptarSolucionDisputa(disputaId) {
+  if (!confirm('¿Aceptas la propuesta de solución? Al aceptar, la disputa cambiará a RESUELTA y se desbloquearán los pagos del contrato.')) return;
+
+  try {
+    var res = await supabase.from('disputas').update({
+      aceptado_por_contraparte: true,
+      estado: 'RESUELTA'
+    }).eq('id', disputaId);
+
+    if (res.error) throw res.error;
+
+    alert('🎉 La disputa ha sido RESUELTA por acuerdo mutuo.');
+    loadContracts();
+  } catch (err) {
+    alert('Error al resolver la disputa: ' + err.message);
+  }
+}
+
+// --- LIBERAR HITO CON VERIFICACIÓN ---
+async function liberarHito(hitoId, contratoId) {
+  try {
+    var checkDisp = await supabase.from('disputas').select('id, estado').eq('contrato_id', contratoId);
+    var disputaActiva = checkDisp.data && checkDisp.data.find(d => d.estado === 'ABIERTA' || d.estado === 'EN_NEGOCIACION');
+
+    if (disputaActiva) {
+      alert('⛔ No es posible liberar fondos mientras exista una disputa activa en este contrato.');
+      return;
+    }
+
+    if (!confirm('¿Deseas liberar los fondos correspondientes a este hito al freelancer?')) return;
+
     var updateHito = await supabase.from('hitos_contrato').update({ estado: 'Liberado' }).eq('id', hitoId);
     if (updateHito.error) throw updateHito.error;
 

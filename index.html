@@ -62,10 +62,6 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
         <input id="regNombre" required placeholder="Tu nombre">
       </div>
       <div class="auth-field">
-        <label for="regIdentificacion">Identificación</label>
-        <input id="regIdentificacion" placeholder="Ej.: 10203040">
-      </div>
-      <div class="auth-field">
         <label for="regCorreo">Correo</label>
         <input id="regCorreo" type="email" required placeholder="tucorreo@ejemplo.com">
       </div>
@@ -115,39 +111,29 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
             <h3 style="margin:0 0 5px;font-size:16px">Prestación de Servicios</h3>
             <button onclick="startContract('Prestación de Servicios')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:16px">Usar plantilla</button>
           </div>
-          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
-            <div style="font-size:21px;margin-bottom:12px">💻</div>
-            <h3 style="margin:0 0 5px;font-size:16px">Obra / Proyecto</h3>
-            <button onclick="startContract('Obra/Proyecto')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:16px">Usar plantilla</button>
-          </div>
-          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:19px">
-            <div style="font-size:21px;margin-bottom:12px">🎨</div>
-            <h3 style="margin:0 0 5px;font-size:16px">Consultoría</h3>
-            <button onclick="startContract('Consultoría')" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:16px">Usar plantilla</button>
-          </div>
         </div>
       </section>
 
+      <!-- FORMULARIO DE CREAR CONTRATO -->
       <section id="view-crear" style="display:none">
-  <h2 style="margin-bottom:20px">Crear contrato</h2>
-  <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px">
-      <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Tipo</label><select id="tipo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Prestación de Servicios</option><option>Obra/Proyecto</option><option>Consultoría</option></select></div>
-      <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título</label><input id="titulo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
-      
-      <!-- CAMPO DE CORREO DE LA OTRA PARTE OBLIGATORIO -->
-      <div style="grid-column:1/-1">
-        <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Correo de la otra parte (Debe estar registrado)</label>
-        <input id="correo_contraparte" type="email" placeholder="correo_del_cliente_o_freelancer@gmail.com" required style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
-      </div>
+        <h2 style="margin-bottom:20px">Crear contrato</h2>
+        <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px">
+            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Tipo</label><select id="tipo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Prestación de Servicios</option><option>Obra/Proyecto</option><option>Consultoría</option></select></div>
+            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Título</label><input id="titulo" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
+            
+            <div style="grid-column:1/-1">
+              <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Correo de la otra parte (Debe estar registrado)</label>
+              <input id="correo_contraparte" type="email" placeholder="cliente_o_freelancer@gmail.com" required style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px">
+            </div>
 
-      <div style="grid-column:1/-1"><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Objeto</label><textarea id="objeto" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;min-height:88px"></textarea></div>
-      <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Valor (COP)</label><input id="valor" type="number" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
-      <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Pago</label><select id="forma_pago" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Por Hitos</option><option>Pago Único</option><option>50/50</option></select></div>
-    </div>
-    <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:20px">Guardar contrato</button>
-  </div>
-</section>
+            <div style="grid-column:1/-1"><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Objeto</label><textarea id="objeto" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;min-height:88px"></textarea></div>
+            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Valor (COP)</label><input id="valor" type="number" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"></div>
+            <div><label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Pago</label><select id="forma_pago" style="width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px"><option>Por Hitos</option><option>Pago Único</option><option>50/50</option></select></div>
+          </div>
+          <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;margin-top:20px">Guardar contrato</button>
+        </div>
+      </section>
 
       <section id="view-contratos" style="display:none">
         <h2 style="margin-bottom:20px">Mis contratos</h2>
@@ -167,56 +153,40 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 </div>
 
 <script>
-// --- CONFIGURACIÓN DE SUPABASE Y BACKEND ---
+// --- CONFIGURACIÓN ---
 var SUPABASE_URL = 'https://gftdhhvsjpojxkdyuvpl.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmdGRoaHZzanBvanhrZHl1dnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNDQ5NjQsImV4cCI6MjEwNDYyMDk2NH0.Y5T1C7yJGOWP7Je55qOPY_3oOyvtOLFnGRWZN3nm0wA';
 var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 var BACKEND_URL = 'https://contrato-claro-backend.onrender.com';
-
-var currentProfile = null;
 
 function $(id) { return document.getElementById(id); }
 
 // --- VISTAS Y TABS ---
 function showLogin() {
-  $('tabLoginBtn').classList.add('active');
-  $('tabRegisterBtn').classList.remove('active');$('loginForm').classList.add('active');
-  $('registerForm').classList.remove('active');$('authError').style.display = 'none';
+  $('tabLoginBtn').classList.add('active'); $('tabRegisterBtn').classList.remove('active');$('loginForm').classList.add('active'); $('registerForm').classList.remove('active');$('authError').style.display = 'none';
 }
 
 function showRegister() {
-  $('tabRegisterBtn').classList.add('active');
-  $('tabLoginBtn').classList.remove('active');$('registerForm').classList.add('active');
-  $('loginForm').classList.remove('active');$('authError').style.display = 'none';
+  $('tabRegisterBtn').classList.add('active'); $('tabLoginBtn').classList.remove('active');$('registerForm').classList.add('active'); $('loginForm').classList.remove('active');$('authError').style.display = 'none';
 }
 
 function showView(view) {
   ['inicio', 'crear', 'contratos', 'calculadora'].forEach(function(v) {
     $('view-' + v).style.display = v === view ? 'block' : 'none';
   });
-
-  if (view === 'contratos') {
-    loadContracts();
-  }
+  if (view === 'contratos') loadContracts();
 }
 
-function startContract(tipo) {
-  $('tipo').value = tipo;
-  showView('crear');
-}
+function startContract(tipo) { $('tipo').value = tipo; showView('crear'); }
 
 // --- AUTENTICACIÓN ---
 $('loginForm').addEventListener('submit', async function(e) {   e.preventDefault();$('authError').style.display = 'none';
-  
   try {
     var result = await supabase.auth.signInWithPassword({
       email: $('loginCorreo').value.trim(),
       password: $('loginPassword').value
     });
-    
     if (result.error) throw result.error;
-    
     checkSession();
   } catch (err) {
     $('authError').textContent = err.message;
@@ -225,23 +195,14 @@ $('loginForm').addEventListener('submit', async function(e) {   e.preventDefault
 });
 
 $('registerForm').addEventListener('submit', async function(e) {   e.preventDefault();$('authError').style.display = 'none';
-  
   try {
     var result = await supabase.auth.signUp({
       email: $('regCorreo').value.trim(),
       password: $('regPassword').value,
-      options: { 
-        data: { 
-          nombre: $('regNombre').value.trim(),
-          identificacion: $('regIdentificacion').value.trim(),
-          rol: $('regRol').value 
-        } 
-      }
+      options: { data: { nombre: $('regNombre').value.trim(), rol:$('regRol').value } }
     });
-
     if (result.error) throw result.error;
-    
-    alert('Registro exitoso. Revisa tu correo para confirmar la cuenta e inicia sesión.');
+    alert('Registro exitoso. Inicia sesión ahora.');
     showLogin();
   } catch (err) {
     $('authError').textContent = err.message;
@@ -251,13 +212,10 @@ $('registerForm').addEventListener('submit', async function(e) {   e.preventDefa
 
 async function handleLogout() {
   await supabase.auth.signOut();
-  currentProfile = null;
   $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
 }
 
-// --- OPERACIONES EN BASE DE DATOS (ESQUEMA EN ESPAÑOL) ---
-
-// 1. Guardar Contrato y vincular en PARTES_CONTRATO
+// --- LOGICA DE CONTRATOS ---
 async function createContract() {
   var tipo = $('tipo').value;
   var titulo = $('titulo').value.trim();
@@ -276,24 +234,17 @@ async function createContract() {
     var user = userResponse.data.user;
     if (!user) throw new Error("No hay una sesión activa.");
 
-    // 1. Verificar PRIMERO si la otra persona existe en la plataforma
-    var buscaContraparte = await supabase
-      .from('perfiles_usuario')
-      .select('id')
-      .eq('correo', correoContraparte)
-      .maybeSingle();
+    var buscaContraparte = await supabase.from('perfiles_usuario').select('id').eq('correo', correoContraparte).maybeSingle();
 
     if (!buscaContraparte.data) {
       alert('❌ ERROR: El correo ' + correoContraparte + ' no está registrado en la plataforma. Dile a esa persona que cree su cuenta primero.');
-      return; // Detenemos la creación del contrato
+      return;
     }
 
-    // 2. Si existe, obtenemos mi rol
     var perfilRes = await supabase.from('perfiles_usuario').select('rol').eq('id', user.id).single();
     var miRol = perfilRes.data ? perfilRes.data.rol : 'Freelancer';
     var rolContraparte = miRol.toLowerCase().includes('cliente') ? 'Freelancer' : 'Cliente';
 
-    // 3. Crear el contrato
     var response = await supabase.from('contratos').insert([{
       tipo: tipo, titulo: titulo, objeto: objeto, valor: valor, forma_pago: forma_pago, estado: 'Activo (Fondeado)'
     }]).select();
@@ -301,19 +252,10 @@ async function createContract() {
     if (response.error) throw response.error;
     var nuevoContrato = response.data[0];
 
-    // 4. Vincularme a mí
-    await supabase.from('partes_contrato').insert([{
-      contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol
-    }]);
+    await supabase.from('partes_contrato').insert([{ contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol }]);
+    await supabase.from('partes_contrato').insert([{ contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte }]);
 
-    // 5. Vincular a la otra persona automáticamente
-    await supabase.from('partes_contrato').insert([{
-      contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte
-    }]);
-
-    alert('✅ ¡Contrato creado y vinculado exitosamente con ' + correoContraparte + '!');
-    
-    // Limpiar formulario y redireccionar
+    alert('✅ ¡Contrato creado y vinculado exitosamente!');
     $('titulo').value = '';$('objeto').value = ''; $('valor').value = '';$('correo_contraparte').value = '';
     showView('contratos');
 
@@ -344,25 +286,20 @@ async function loadContracts() {
     }
 
     container.innerHTML = registros.map(function(item) {
-      if(!item.contratos) return ''; // Prevenir errores si hay datos nulos
+      if(!item.contratos) return '';
       var c = item.contratos;
       var miRolEnContrato = item.rol_en_contrato;
       var esCliente = miRolEnContrato && miRolEnContrato.toLowerCase().includes('cliente');
       var accionEscrow = '';
 
-      // Mostrar diferentes botones/textos dependiendo de si ya se pagó o no
       if (c.estado === 'Finalizado') {
-        if (esCliente) {
-          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">✅ Dinero entregado al freelancer</span>`;
-        } else {
-          accionEscrow = `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">🎉 Pago recibido en tu cuenta</span>`;
-        }
+        accionEscrow = esCliente 
+          ? `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">✅ Dinero entregado al freelancer</span>`
+          : `<span style="background:#e9fbf1;color:#087c38;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;">🎉 Pago recibido en tu cuenta</span>`;
       } else {
-        if (esCliente) {
-          accionEscrow = `<button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">🔓 Liberar Fondos al Freelancer</button>`;
-        } else {
-          accionEscrow = `<span style="background:#f0f4f8;color:#627d98;padding:8px 12px;border-radius:6px;font-size:13px;font-style:italic;">⏳ Esperando que el cliente libere el pago</span>`;
-        }
+        accionEscrow = esCliente 
+          ? `<button onclick="liberarEscrow('${c.id}')" style="background:#00a6a6;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">🔓 Liberar Fondos al Freelancer</button>`
+          : `<span style="background:#f0f4f8;color:#627d98;padding:8px 12px;border-radius:6px;font-size:13px;font-style:italic;">⏳ Esperando que el cliente libere el pago</span>`;
       }
 
       return `
@@ -381,47 +318,21 @@ async function loadContracts() {
           </div>
         </div>`;
     }).join('');
-
   } catch (err) {
     container.innerHTML = '<p style="color:#b42318;">Error al cargar contratos: ' + err.message + '</p>';
   }
 }
-    // Limpiar formulario y navegar
-    $('titulo').value = '';
-    $('objeto').value = '';
-    $('valor').value = '';
-    if (inputCorreo) inputCorreo.value = '';
-    showView('contratos');
 
-  } catch (err) {
-    console.error(err);
-    alert('Error al guardar: ' + err.message);
-  }
-}
-
-// 2. Cargar Contratos desde la tabla 'contratos'
-
-// 3. Liberar Fondos vía Backend (Render)
 async function liberarEscrow(contratoId) {
-  if (!confirm('¿Estás seguro de que deseas liberar los fondos en custodia para este contrato?')) {
-    return;
-  }
-
+  if (!confirm('¿Estás seguro de que deseas liberar los fondos al freelancer?')) return;
   try {
     var response = await fetch(`${BACKEND_URL}/api/escrow/liberar`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contrato_id: contratoId })
     });
-
     var data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Error al procesar la liberación de fondos.');
-    }
-
+    if (!response.ok) throw new Error(data.error || 'Error al procesar.');
     alert('¡Fondos liberados exitosamente!');
     loadContracts();
   } catch (err) {
@@ -429,13 +340,11 @@ async function liberarEscrow(contratoId) {
   }
 }
 
-// --- CALCULADORA ---
 function calc() {
   var base = Number($('horas').value) * Number($('tarifa').value);
   $('base').textContent = '$' + base.toLocaleString('es-CO');
 }
 
-// --- VERIFICAR SESIÓN INICIAL ---
 async function checkSession() {
   var sessionResponse = await supabase.auth.getSession();
   if (sessionResponse.data && sessionResponse.data.session) {

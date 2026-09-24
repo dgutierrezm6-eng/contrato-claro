@@ -8,12 +8,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Permite peticiones desde el frontend
+CORS(app)  # Permite peticiones desde el frontend en Vercel
 
 # ==============================================================================
 # CONFIGURACIÓN SUPABASE (BACKEND)
-# IMPORTANTE: El backend usa la 'SERVICE_ROLE_KEY', no la ANON_KEY del frontend.
-# Esto le da permisos de administrador para mover fondos en Escrow y resolver disputas.
 # ==============================================================================
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") 
@@ -24,23 +22,22 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==============================================================================
-# 1. SERVIR EL FRONTEND (Tu HTML)
+# 1. SERVIR EL FRONTEND
 # ==============================================================================
 @app.route('/')
 def index():
-    """Sirve el archivo index-limpio.html cuando entran a la raíz de la app"""
-    return send_file('index-limpio.html')
+    """Sirve el archivo HTML principal"""
+    return send_file('index.html')
 
 # ==============================================================================
-# 2. LÓGICA CRÍTICA: GESTIÓN DE ESCROW (CUSTODIA)
+# 2. GESTIÓN DE ESCROW (CUSTODIA)
 # ==============================================================================
 @app.route('/api/escrow/depositar', methods=['POST'])
 def depositar_escrow():
     """
-    Simula o conecta con pasarela de pagos (ej. Stripe/Wompi).
-    Congela el dinero y registra la custodia en la base de datos.
+    Registra el depósito inicial de fondos para un contrato.
     """
-    data = request.json
+    data = request.json or {}
     contrato_id = data.get('contrato_id')
     monto = data.get('monto')
     
@@ -48,10 +45,8 @@ def depositar_escrow():
         return jsonify({"error": "Datos incompletos (contrato_id, monto)"}), 400
 
     try:
-        # 1. Aquí iría la lógica de cobro con tarjeta (Stripe/MercadoPago)
         referencia = f"TXN-{contrato_id}-DEP"
 
-        # 2. Registrar el Escrow en Supabase
         escrow_data = {
             "contrato_id": contrato_id,
             "monto": monto,
@@ -59,11 +54,11 @@ def depositar_escrow():
             "referencia_pago": referencia
         }
         
-        # Insertar en tabla CUSTODIA_ESCROW
-        res_escrow = supabase.table('CUSTODIA_ESCROW').insert(escrow_data).execute()
+        # Guardar en la tabla 'custodia_escrow' (en minúsculas)
+        res_escrow = supabase.table('custodia_escrow').insert(escrow_data).execute()
         
-        # 3. Actualizar estado del contrato
-        supabase.table('CONTRATOS').update({"estado": "Activo (Fondeado)"}).eq("id", contrato_id).execute()
+        # Actualizar estado en la tabla 'contratos'
+        supabase.table('contratos').update({"estado": "Activo (Fondeado)"}).eq("id", contrato_id).execute()
 
         return jsonify({"message": "Fondos asegurados en Escrow", "data": res_escrow.data}), 201
 
@@ -73,51 +68,64 @@ def depositar_escrow():
 @app.route('/api/escrow/liberar', methods=['POST'])
 def liberar_escrow():
     """
-    Libera los fondos al Freelancer una vez se aprueba el hito o el contrato finaliza.
+    Libera los fondos del contrato al freelancer.
+    Acepta tanto 'contrato_id' (enviado desde el frontend) como 'escrow_id'.
     """
-    data = request.json
+    data = request.json or {}
+    contrato_id = data.get('contrato_id')
     escrow_id = data.get('escrow_id')
     
+    if not contrato_id and not escrow_id:
+        return jsonify({"error": "Se requiere contrato_id o escrow_id"}), 400
+
     try:
-        # Aquí iría la lógica de transferencia real a la cuenta bancaria del Freelancer
-        
-        # Actualizar base de datos
-        res = supabase.table('CUSTODIA_ESCROW').update({"estado": "Liberado"}).eq("id", escrow_id).execute()
-        
-        return jsonify({"message": "Fondos transferidos al contratista exitosamente", "data": res.data}), 200
+        if contrato_id:
+            # Actualiza el registro de custodia filtrando por contrato_id
+            res = supabase.table('custodia_escrow').update({"estado": "Liberado"}).eq("contrato_id", contrato_id).execute()
+            # Actualiza el estado del contrato a Finalizado
+            supabase.table('contratos').update({"estado": "Finalizado"}).eq("id", contrato_id).execute()
+        else:
+            # Actualiza por la ID del registro de custodia
+            res = supabase.table('custodia_escrow').update({"estado": "Liberado"}).eq("id", escrow_id).execute()
+
+        return jsonify({"message": "Fondos transferidos exitosamente", "data": res.data}), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 # ==============================================================================
-# 3. LÓGICA CRÍTICA: RESOLUCIÓN DE DISPUTAS (ADMINISTRADOR)
+# 3. RESOLUCIÓN DE DISPUTAS
 # ==============================================================================
 @app.route('/api/disputas/resolver', methods=['POST'])
 def resolver_disputa():
     """
-    Permite a un Administrador dictaminar hacia dónde va el dinero de un contrato congelado.
+    Permite dictaminar hacia dónde van los fondos retenidos.
     """
-    data = request.json
+    data = request.json or {}
     disputa_id = data.get('disputa_id')
     resolucion_texto = data.get('resolucion')
-    accion_fondos = data.get('accion_fondos') # 'devolver_cliente' o 'pagar_freelancer'
+    accion_fondos = data.get('accion_fondos')  # 'devolver_cliente' o 'pagar_freelancer'
+
+    if not disputa_id:
+        return jsonify({"error": "Falta disputa_id"}), 400
 
     try:
         # 1. Actualizar la disputa
-        res_disputa = supabase.table('DISPUTAS').update({
+        res_disputa = supabase.table('disputas').update({
             "estado": "Resuelta",
             "resolucion": resolucion_texto
         }).eq("id", disputa_id).execute()
 
+        if not res_disputa.data:
+            return jsonify({"error": "No se encontró la disputa especificada"}), 44
+
         contrato_id = res_disputa.data[0]['contrato_id']
 
         # 2. Mover los fondos según la decisión
-        if accion_fondos == 'devolver_cliente':
-            estado_escrow = 'Reembolsado por Disputa'
-        else:
-            estado_escrow = 'Liberado por Arbitraje'
+        estado_escrow = 'Reembolsado por Disputa' if accion_fondos == 'devolver_cliente' else 'Liberado por Arbitraje'
 
-        supabase.table('CUSTODIA_ESCROW').update({"estado": estado_escrow}).eq("contrato_id", contrato_id).execute()
-        supabase.table('CONTRATOS').update({"estado": "Finalizado con Disputa"}).eq("id", contrato_id).execute()
+        supabase.table('custodia_escrow').update({"estado": estado_escrow}).eq("contrato_id", contrato_id).execute()
+        supabase.table('contratos').update({"estado": "Finalizado con Disputa"}).eq("id", contrato_id).execute()
 
         return jsonify({"message": "Disputa resuelta de manera oficial."}), 200
 
@@ -125,6 +133,5 @@ def resolver_disputa():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Ejecuta el servidor en el puerto 5000 (o el asignado por Render/Heroku)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)

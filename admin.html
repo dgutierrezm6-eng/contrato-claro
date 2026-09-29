@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrador - Contrato Limpio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 850px;
+            width: 100%;
+            background: #ffffff;
+            padding: 35px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-top: 20px;
+        }
+        h2, h3 {
+            color: #1e293b;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        .error {
+            color: #dc2626;
+            margin-top: 15px;
+            font-weight: 600;
+            text-align: center;
+        }
+        #adminPanel {
+            display: none;
+        }
+        ul {
+            line-height: 1.6;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: #fff;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #1e293b;
+            color: white;
+        }
+        .btn-logout {
+            background-color: #ef4444;
+            margin-top: 25px;
+        }
+        .btn-logout:hover {
+            background-color: #dc2626;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="back-link">← Volver al sitio principal</a>
+
+    <!-- Formulario de Inicio de Sesión -->
+    <div id="loginBox">
+        <h2>Acceso Restringido - Administrador</h2>
+        <p>Introduce tus credenciales autorizadas para gestionar el entorno.</p>
+        <form onsubmit="validarAcceso(event)">
+            <div class="form-group">
+                <label for="email">Correo electrónico:</label>
+                <input type="email" id="email" required placeholder="correo@ucentral.edu.co">
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" required placeholder="••••••••••">
+            </div>
+            <button type="submit">Ingresar al Panel</button>
+        </form>
+        <p id="errorMessage" class="error"></p>
+    </div>
+
+    <!-- Panel de Información del Administrador -->
+    <div id="adminPanel">
+        <h2>Perfil de Administrador</h2>
+        <p>Un perfil de administrador es el nivel de cuenta con el mayor control y privilegios dentro de un sistema informático, sitio web, aplicación o red empresarial. Su función principal es gestionar el entorno completo, asegurar su correcto funcionamiento y controlar qué pueden o no hacer los demás usuarios.</p>
+        
+        <p>A continuación, se detalla cómo funciona a través de sus capacidades principales:</p>
+
+        <h3>⚙️ Gestión del Sistema y Configuración</h3>
+        <ul>
+            <li><strong>Control total:</strong> El administrador puede cambiar la configuración global del sistema, modificar la apariencia, alterar las políticas de seguridad y ajustar los parámetros operativos.</li>
+            <li><strong>Instalación y actualización:</strong> Tiene permisos para instalar o desinstalar software, aplicaciones, complementos (plugins) y parches de seguridad críticos que afectan a todo el entorno.</li>
+        </ul>
+
+        <h3>👥 Control de Usuarios y Permisos</h3>
+        <ul>
+            <li><strong>Creación y eliminación:</strong> Puede dar de alta a nuevos usuarios, suspender cuentas inactivas o eliminar perfiles de la base de datos.</li>
+            <li><strong>Asignación de roles:</strong> Define el nivel de acceso de cada persona (por ejemplo, perfil de editor, moderador, cliente o empleado), asegurando que cada quien acceda solo a lo que necesita.</li>
+            <li><strong>Restablecimiento de credenciales:</strong> Si un usuario olvida su contraseña o bloquea su cuenta, el administrador puede restablecer sus accesos.</li>
+        </ul>
+
+        <h3>🔒 Seguridad y Auditoría</h3>
+        <ul>
+            <li><strong>Monitoreo:</strong> Tiene acceso a los registros de actividad (logs) para ver quién se ha conectado, desde dónde y qué acciones realizó dentro del sistema.</li>
+            <li><strong>Respaldos:</strong> Es el encargado de programar, realizar y restaurar copias de seguridad (backups) para proteger la información ante fallos o ciberataques.</li>
+        </ul>
+
+        <h3>📊 Acceso a Datos y Reportes</h3>
+        <ul>
+            <li><strong>Visualización global:</strong> A diferencia de un usuario común, el administrador puede ver estadísticas generales, reportes financieros, bases de datos completas y métricas de rendimiento del sistema.</li>
+        </ul>
+
+        <h3>🔄 Diferencia con otros perfiles</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Perfil</th>
+                    <th>Nivel de Acceso</th>
+                    <th>Funciones Principales</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Administrador</strong></td>
+                    <td>Total</td>
+                    <td>Configurar el sistema, gestionar usuarios, instalar software y manejar la seguridad.</td>
+                </tr>
+                <tr>
+                    <td><strong>Editor / Moderador</strong></td>
+                    <td>Medio</td>
+                    <td>Gestionar y publicar contenido, o moderar las interacciones de otros usuarios.</td>
+                </tr>
+                <tr>
+                    <td><strong>Usuario Estándar / Cliente</strong></td>
+                    <td>Limitado</td>
+                    <td>Consumir el servicio, modificar su propio perfil y realizar tareas básicas asignadas.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+    </div>
+</div>
+
+<script>
+    function validarAcceso(event) {
+        event.preventDefault();
+
+        const emailInput = document.getElementById('email').value.trim();
+        const passwordInput = document.getElementById('password').value;
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Credenciales restringidas
+        const correoAutorizado = "jmartinezl10@ucentral.edu.co";
+        const claveAutorizada = "1234567890";
+
+        if (emailInput === correoAutorizado && passwordInput === claveAutorizada) {
+            document.getElementById('loginBox').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            errorMessage.textContent = '';
+        } else {
+            errorMessage.textContent = "Acceso denegado. Correo o contraseña incorrectos.";
+        }
+    }
+
+    function cerrarSesion() {
+        document.getElementById('email').value = '';
+        document.getElementById('password').value = '';
+        document.getElementById('loginBox').style.display = 'block';
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('errorMessage').textContent = '';
+    }
+</script>
+
+</body>
+</html>

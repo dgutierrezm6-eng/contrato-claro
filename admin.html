@@ -273,18 +273,36 @@
 
     function renderContratos(lista) {
         const tbody = document.getElementById('tablaContratos');
-        if(!lista || lista.length === 0) {
+        if (!lista || lista.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4">No hay contratos guardados en la base de datos.</td></tr>';
             return;
         }
-        tbody.innerHTML = lista.map(c => `
-            <tr>
-                <td><strong>${c.titulo || c.descripcion || 'Contrato sin título'}</strong></td>
-                <td>$${c.monto_total || c.monto || 0}</td>
-                <td><span class="badge badge-pending">${c.estado || 'Activo'}</span></td>
-                <td>${c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A'}</td>
-            </tr>
-        `).join('');
+
+        tbody.innerHTML = lista.map(c => {
+            // Evaluamos posibles nombres de columnas para el monto/valor
+            const montoRaw = c.monto_total ?? c.monto ?? c.valor ?? c.valor_total ?? c.presupuesto ?? c.total ?? c.monto_contrato ?? 0;
+            
+            // Formateamos como número con separadores de miles
+            const montoFormateado = Number(montoRaw).toLocaleString('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0
+            });
+
+            // Evaluamos título, estado y fecha
+            const titulo = c.titulo || c.title || c.nombre || c.descripcion || 'Contrato sin título';
+            const estado = c.estado || c.status || 'Activo';
+            const fecha = c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A';
+
+            return `
+                <tr>
+                    <td><strong>${titulo}</strong></td>
+                    <td style="font-weight: bold; color: #0b2545;">${montoFormateado}</td>
+                    <td><span class="badge badge-pending">${estado}</span></td>
+                    <td>${fecha}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function renderDisputas(lista) {

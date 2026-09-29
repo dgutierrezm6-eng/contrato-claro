@@ -1,3 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrador - Contrato Limpio</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f6f9fc; color: #102a43; }
+        
+        /* Auth Screen */
+        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#0b2545,#124e78); padding: 20px; }
+        .auth-card { background: #fff; border-radius: 16px; padding: 32px; width: 100%; max-width: 400px; box-shadow: 0 14px 40px rgba(16,42,67,0.1); }
+        .auth-brand { font-weight: 800; font-size: 20px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+        .logo { width: 32px; height: 32px; background: #0b2545; border-radius: 8px; position: relative; }
+        .logo:after { content: "✓"; position: absolute; color: #fff; font-weight: 900; font-size: 20px; left: 7px; top: -2px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 800; margin-bottom: 6px; color: #334e68; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #bcccdc; border-radius: 8px; font-size: 14px; }
+        .btn-primary { width: 100%; background: #00a6a6; color: #fff; border: 0; border-radius: 99px; padding: 11px 15px; font-weight: 800; cursor: pointer; font-size: 15px; }
+        .btn-primary:hover { background: #008f8f; }
+        .error { color: #dc2626; margin-top: 10px; font-weight: bold; font-size: 13px; text-align: center; }
+
+        /* Dashboard Layout */
+        #adminDashboard { display: none; }
+        .header { background: #0b2545; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; display: flex; align-items: center; gap: 10px; }
+        .btn-logout { background: #e63946; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        .main-content { padding: 30px; max-width: 1200px; margin: auto; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 5px solid #00a6a6; }
+        .stat-card h4 { color: #627d98; font-size: 13px; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-card .number { font-size: 28px; font-weight: 800; color: #102a43; }
+
+        /* Tabs Navigation */
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+        .tab-btn { background: none; border: none; padding: 12px 20px; font-size: 15px; font-weight: bold; color: #627d98; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: #00a6a6; border-bottom-color: #00a6a6; }
+
+        /* Tables & Cards */
+        .panel-section { display: none; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .panel-section.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background: #f8fafc; color: #334e68; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .badge-active { background: #d1fae5; color: #065f46; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        
+        .btn-action { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-edit { background: #2563eb; color: white; }
+        .btn-danger { background: #dc2626; color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- Pantalla de Login -->
+    <div id="loginScreen" class="auth-container">
+        <div class="auth-card">
+            <div class="auth-brand"><div class="logo"></div>Contrato Limpio</div>
+            <p style="font-size:13px;color:#627d98;margin-bottom:20px">Acceso Privado de Administración</p>
+            
+            <form onsubmit="validarAcceso(event)">
+                <div class="form-group">
+                    <label>Correo electrónico</label>
+                    <input type="email" id="email" required placeholder="jmartinezl10@ucentral.edu.co">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary">Ingresar al Panel</button>
+            </form>
+            <p id="errorMessage" class="error"></p>
+            <div style="text-align:center; margin-top:15px;">
+                <a href="index.html" style="font-size:12px; color:#627d98; text-decoration:none;">← Volver al sitio principal</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Administrador -->
+    <div id="adminDashboard">
+        <div class="header">
+            <h1><div class="logo"></div> Panel de Administración</h1>
+            <div>
+                <span style="font-size: 14px; margin-right: 15px;">👤 jmartinezl10@ucentral.edu.co</span>
+                <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Métricas globales dinámicas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Usuarios Registrados</h4>
+                    <div class="number" id="totalUsuarios">...</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Contratos Creados</h4>
+                    <div class="number" id="totalContratos">...</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Disputas Registradas</h4>
+                    <div class="number" style="color: #dc2626;" id="totalDisputas">...</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Conexión DB</h4>
+                    <div class="number" style="color: #10b981; font-size: 20px;" id="estadoConexion">🟢 Supabase OK</div>
+                </div>
+            </div>
+
+            <!-- Navegación por pestañas -->
+            <div class="nav-tabs">
+                <button class="tab-btn active" onclick="cambiarTab('usuarios')">👥 Usuarios Registrados</button>
+                <button class="tab-btn" onclick="cambiarTab('contratos')">📄 Contratos Reales</button>
+                <button class="tab-btn" onclick="cambiarTab('disputas')">⚖️ Disputas</button>
+            </div>
+
+            <!-- Módulo 1: Usuarios (Consulta a tabla de usuarios/profiles) -->
+            <div id="tab-usuarios" class="panel-section active">
+                <h3>Usuarios en Supabase</h3>
+                <p style="font-size: 13px; color: #627d98; margin-bottom: 15px;">Cargados automáticamente desde la base de datos.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID / UUID</th>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Rol</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaUsuarios">
+                        <tr><td colspan="4">Cargando usuarios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Módulo 2: Contratos en tiempo real -->
+            <div id="tab-contratos" class="panel-section">
+                <h3>Contratos Creados</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Título del Contrato</th>
+                            <th>Monto Total</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaContratos">
+                        <tr><td colspan="4">Cargando contratos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Módulo 3: Disputas reales -->
+            <div id="tab-disputas" class="panel-section">
+                <h3>Disputas y Controversias</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Contrato</th>
+                            <th>Motivo / Razón</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaDisputas">
+                        <tr><td colspan="3">Cargando disputas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 <script>
     // 1. REEMPLAZA CON TUS CREDENCIALES EXACTAS DE INDEX.HTML
     const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
@@ -130,3 +307,5 @@
         document.getElementById('tab-' + tabName).classList.add('active');
     }
 </script>
+</body>
+</html>

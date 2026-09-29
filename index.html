@@ -214,7 +214,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
             <textarea id="objeto" style="width:100%;padding:14px;border:1px solid #bcccdc;border-radius:8px;min-height:280px;font-family:monospace;font-size:13px;line-height:1.5;background:#fafbfc"></textarea>
           </div>
 
-          <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:9px;padding:12px 15px;font-weight:800;cursor:pointer;margin-top:20px;font-size:16px">Guardar Contrato y Activar Custodia</button>
+          <button onclick="createContract()" style="width:100%;background:#00a6a6;color:#fff;border:0;border-radius:99px;padding:12px 15px;font-weight:800;cursor:pointer;margin-top:20px;font-size:16px">Guardar Contrato y Activar Custodia</button>
         </div>
       </section>
 
@@ -318,27 +318,16 @@ var PLANTILLAS_HITOS = {
 
 var listadoHitos = [];
 
-
-
-  
-
-// --- SINCRONIZACIÓN AUTOMÁTICA DEL PERFIL DE USUARIO ---
 async function syncPerfilUsuario(user) {
   if (!user) return;
-  
-  // 1. Consultar si el perfil ya existe en la base de datos
   var { data: perfilExistente } = await supabase
     .from('perfiles_usuario')
     .select('id, rol')
     .eq('id', user.id)
     .maybeSingle();
 
-  // Si ya existe en la BD y tiene rol asignado, no modificar nada
-  if (perfilExistente && perfilExistente.rol) {
-    return;
-  }
+  if (perfilExistente && perfilExistente.rol) return;
 
-  // 2. Si es un usuario completamente nuevo, tomar el rol elegido en el registro
   var nombre = (user.user_metadata && user.user_metadata.nombre) ? user.user_metadata.nombre : user.email.split('@')[0];
   var rol = (user.user_metadata && user.user_metadata.rol) ? user.user_metadata.rol : 'Freelancer';
 
@@ -432,21 +421,15 @@ Las partes acuerdan que cualquier diferencia o desacuerdo será gestionado inici
 
 De no alcanzarse un acuerdo mutuo expreso, la controversia se someterá al mecanismo de ${mecanismo.toUpperCase()}, conforme a la legislación colombiana aplicable.`;
 
-  var clausulasRestantes = `
-
-CUARTA – PROPIEDAD INTELECTUAL:
+  var clausulasRestantes = `\n\nCUARTA – PROPIEDAD INTELECTUAL:
 Toda la propiedad intelectual, derechos patrimoniales y archivos finales derivados de los entregables serán de titularidad exclusiva del CONTRATANTE una vez se realice la liberación de los pagos.
 
 QUINTA – CONFIDENCIALIDAD:
 Ambas partes mantendrán estricta reserva sobre la información técnica, comercial o privada intercambiada durante la ejecución de este acuerdo.
 
 SEXTA – CUSTODIA DE FONDOS (ESCROW):
-Los pagos serán depositados bajo custodia en la plataforma y se liberarán progresivamente al CONTRATISTA a medida que el CONTRATANTE apruebe la entrega de cada hito.
+Los pagos serán depositados bajo custodia en la plataforma y se liberarán progresivamente al CONTRATISTA a medida que el CONTRATANTE apruebe la entrega de cada hito.`;
 
-SEPTIMA – PROCEDIMIENTO Y SOLUCIÓN DE DISPUTAS:
-Ante cualquier inconformidad con los entregables, las partes iniciarán un proceso de NEGOCIACIÓN DIRECTA registrado en la plataforma por un plazo máximo de ${dias} días hábiles. Durante este tiempo los fondos retenidos permanecerán congelados. En caso de no llegar a un acuerdo, la disputa se elevará a un mecanismo de ${mecanismo.toUpperCase()} conforme a la ley.`;
-
-  
   return clausulasEspecificas + clausulaDisputas + clausulasRestantes;
 }
 
@@ -468,7 +451,6 @@ function cargarModulo(moduloKey) {
   cargarHitosSegunModulo(moduloKey);
 }
 
-// --- VISTAS ---
 function showLogin() {
   $('tabLoginBtn').classList.add('active'); $('tabRegisterBtn').classList.remove('active');$('loginForm').classList.add('active'); $('registerForm').classList.remove('active');$('authError').style.display = 'none';
 }
@@ -487,7 +469,6 @@ function showView(view) {
   if (view === 'contratos') loadContracts();
 }
 
-// --- AUTENTICACIÓN Y REGISTRO ---
 $('loginForm').addEventListener('submit', async function(e) {   e.preventDefault();$('authError').style.display = 'none';
   try {
     var result = await supabase.auth.signInWithPassword({
@@ -529,7 +510,6 @@ async function handleLogout() {
   $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
 }
 
-// --- CREAR CONTRATO (VALIDACIONES REFORZADAS) ---
 async function createContract() {
   var titulo = $('titulo').value.trim();
   var objeto = $('objeto').value.trim();
@@ -549,7 +529,6 @@ async function createContract() {
 
     await syncPerfilUsuario(user);
 
-    // Buscar si la contraparte existe registrada en perfiles_usuario
     var buscaContraparte = await supabase.from('perfiles_usuario').select('id, rol').eq('correo', correoContraparte).maybeSingle();
 
     if (buscaContraparte.error) {
@@ -557,7 +536,7 @@ async function createContract() {
     }
 
     if (!buscaContraparte.data) {
-      alert('❌ El correo "' + correoContraparte + '" no está registrado en la plataforma. La otra persona debe registrarse primero con ese correo.');
+      alert('❌ El correo "' + correoContraparte + '" no está registrado en la plataforma. La otra persona debe registrarse primero.');
       return;
     }
 
@@ -567,7 +546,6 @@ async function createContract() {
     var esMiRolCliente = miRol.toLowerCase().includes('cliente') || miRol.toLowerCase().includes('contratante');
     var rolContraparte = buscaContraparte.data.rol || (esMiRolCliente ? 'Freelancer' : 'Cliente o Contratante');
 
-    // 1. Guardar Contrato
     var response = await supabase.from('contratos').insert([{
       tipo: tipoModulo,
       titulo: titulo,
@@ -579,12 +557,11 @@ async function createContract() {
 
     if (response.error) throw response.error;
     if (!response.data || response.data.length === 0) {
-      throw new Error("El contrato fue insertado pero no devolvió datos. Asegúrate de ejecutar el SQL de permisos RLS en Supabase.");
+      throw new Error("El contrato fue insertado pero no devolvió datos. Revisa permisos RLS en Supabase.");
     }
 
     var nuevoContrato = response.data[0];
 
-    // 2. Registrar los dos roles en partes_contrato
     var partesRes = await supabase.from('partes_contrato').insert([
       { contrato_id: nuevoContrato.id, perfil_id: user.id, rol_en_contrato: miRol },
       { contrato_id: nuevoContrato.id, perfil_id: buscaContraparte.data.id, rol_en_contrato: rolContraparte }
@@ -592,7 +569,6 @@ async function createContract() {
 
     if (partesRes.error) throw partesRes.error;
 
-    // 3. Registrar hitos
     var payloadHitos = listadoHitos.map(h => ({
       contrato_id: nuevoContrato.id,
       titulo: h.titulo,
@@ -603,6 +579,13 @@ async function createContract() {
     var hitosInsRes = await supabase.from('hitos_contrato').insert(payloadHitos);
     if (hitosInsRes.error) throw hitosInsRes.error;
 
+    await supabase.from('custodia_escrow').insert([{
+      contrato_id: nuevoContrato.id,
+      monto: valorTotal,
+      estado: 'En Custodia',
+      referencia_pago: 'TXN-' + nuevoContrato.id + '-INIT'
+    }]);
+
     alert('✅ Contrato guardado y vinculado a ambas cuentas exitosamente.');
     $('titulo').value = '';$('correo_contraparte').value = '';
     showView('contratos');
@@ -612,7 +595,6 @@ async function createContract() {
   }
 }
 
-// --- CONSULTA MULTIETAPA ROBUSTA DE CONTRATOS ---
 async function loadContracts() {
   var container = $('contractList');
   container.innerHTML = '<p style="color:#627d98;">Cargando contratos, hitos y disputas desde la base de datos...</p>';
@@ -625,7 +607,6 @@ async function loadContracts() {
       return;
     }
 
-    // Paso A: Obtener las vinculaciones en partes_contrato para el usuario actual
     var partesRes = await supabase
       .from('partes_contrato')
       .select('contrato_id, rol_en_contrato')
@@ -643,7 +624,6 @@ async function loadContracts() {
     var rolesMap = {};
     partes.forEach(p => { rolesMap[p.contrato_id] = p.rol_en_contrato; });
 
-    // Paso B: Consultar la información general de los contratos
     var contratosRes = await supabase
       .from('contratos')
       .select('*')
@@ -657,10 +637,8 @@ async function loadContracts() {
       return;
     }
 
-    // Ordenar contratos del más reciente al más antiguo
     contratos.sort((a, b) => b.id - a.id);
 
-    // Paso C: Consultar hitos, disputas y evidencias asociadas
     var hitosRes = await supabase.from('hitos_contrato').select('*').in('contrato_id', contratoIds);
     var todosLosHitos = hitosRes.data || [];
 
@@ -674,14 +652,12 @@ async function loadContracts() {
       todasLasEvidencias = evidenciasRes.data || [];
     }
 
-    // Paso D: Renderizar la información
     container.innerHTML = contratos.map(function(c) {
       var miRolEnContrato = rolesMap[c.id] || 'Participante';
       var esCliente = miRolEnContrato.toLowerCase().includes('cliente') || miRolEnContrato.toLowerCase().includes('contratante');
 
       var hitosDelContrato = todosLosHitos.filter(h => h.contrato_id === c.id);
       var disputasDelContrato = todasLasDisputas.filter(d => d.contrato_id === c.id);
-      
       var disputaActiva = disputasDelContrato.find(d => d.estado === 'ABIERTA' || d.estado === 'EN_NEGOCIACION');
 
       var renderHitosHTML = hitosDelContrato.map(function(h) {
@@ -773,7 +749,6 @@ async function loadContracts() {
   }
 }
 
-// --- GESTIÓN DE DISPUTAS ---
 function abrirModalDisputa(contratoId) {
   $('disputaContratoId').value = contratoId;
   $('disputaModal').style.display = 'flex';
@@ -867,7 +842,6 @@ async function aceptarSolucionDisputa(disputaId) {
   }
 }
 
-// --- LIBERAR HITO CON VERIFICACIÓN DE ROL Y DISPUTAS ---
 async function liberarHito(hitoId, contratoId) {
   try {
     var userResponse = await supabase.auth.getUser();
@@ -907,7 +881,7 @@ async function liberarHito(hitoId, contratoId) {
         body: JSON.stringify({ contrato_id: contratoId, hito_id: hitoId })
       });
     } catch(e) {
-      console.warn("Backend externo no disponible, pero la base de datos se actualizó.");
+      console.warn("Servidor backend opcional no disponible, pero Supabase se actualizó correctamente.");
     }
 
     var consultaHitos = await supabase.from('hitos_contrato').select('estado').eq('contrato_id', contratoId);

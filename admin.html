@@ -248,18 +248,27 @@
 
     function renderUsuarios(lista) {
         const tbody = document.getElementById('tablaUsuarios');
-        if(!lista || lista.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4">No hay usuarios/partes registrados en la tabla partes_contrato.</td></tr>';
+        if (!lista || lista.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No hay usuarios registrados en la base de datos.</td></tr>';
             return;
         }
-        tbody.innerHTML = lista.map(u => `
-            <tr>
-                <td style="font-size:11px; color:#627d98;">${u.id || 'N/A'}</td>
-                <td><strong>${u.nombre || u.usuario_id || 'Sin Nombre'}</strong></td>
-                <td>${u.correo || u.email || 'N/A'}</td>
-                <td><span class="badge badge-active">${u.rol || 'Participante'}</span></td>
-            </tr>
-        `).join('');
+
+        tbody.innerHTML = lista.map(u => {
+            // Evaluamos las columnas para evitar campos vacíos
+            const id = u.id || u.user_id || u.id_usuario || 'N/A';
+            const nombre = u.nombre || u.nombre_completo || u.full_name || u.nombre_usuario || 'Sin nombre';
+            const correo = u.correo || u.email || u.correo_electronico || 'Sin correo';
+            const rol = u.rol || u.role || 'Usuario';
+
+            return `
+                <tr>
+                    <td style="font-size:11px; color:#627d98; font-family:monospace;">${id}</td>
+                    <td><strong>${nombre}</strong></td>
+                    <td>${correo}</td>
+                    <td><span class="badge badge-active">${rol}</span></td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function renderContratos(lista) {

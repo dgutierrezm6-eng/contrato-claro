@@ -49,7 +49,7 @@
         th { background: #f8fafc; color: #334e68; }
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
         .badge-active { background: #d1fae5; color: #065f46; }
-        .badge-admin { background: #e0f2fe; color: #0369a1; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
         
         .btn-action { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; margin-right: 5px; }
         .btn-edit { background: #2563eb; color: white; }
@@ -93,143 +93,96 @@
         </div>
 
         <div class="main-content">
-            <!-- Métricas globales (KPIs) -->
+            <!-- Métricas globales dinámicas -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <h4>Usuarios Registrados</h4>
-                    <div class="number" id="totalUsuarios">124</div>
+                    <div class="number" id="totalUsuarios">...</div>
                 </div>
                 <div class="stat-card">
-                    <h4>Contratos Activos</h4>
-                    <div class="number" id="totalContratos">48</div>
+                    <h4>Contratos Creados</h4>
+                    <div class="number" id="totalContratos">...</div>
                 </div>
                 <div class="stat-card">
-                    <h4>Disputas Abiertas</h4>
-                    <div class="number" style="color: #dc2626;">2</div>
+                    <h4>Disputas Registradas</h4>
+                    <div class="number" style="color: #dc2626;" id="totalDisputas">...</div>
                 </div>
                 <div class="stat-card">
-                    <h4>Estado del Sistema</h4>
-                    <div class="number" style="color: #10b981; font-size: 20px;">🟢 Operativo</div>
+                    <h4>Conexión DB</h4>
+                    <div class="number" style="color: #10b981; font-size: 20px;" id="estadoConexion">🟢 Supabase OK</div>
                 </div>
             </div>
 
             <!-- Navegación por pestañas -->
             <div class="nav-tabs">
-                <button class="tab-btn active" onclick="cambiarTab('usuarios')">👥 Gestión de Usuarios</button>
-                <button class="tab-btn" onclick="cambiarTab('configuracion')">⚙️ Configuración Sistema</button>
-                <button class="tab-btn" onclick="cambiarTab('seguridad')">🔒 Seguridad y Logs</button>
-                <button class="tab-btn" onclick="cambiarTab('reportes')">📊 Reportes y Backups</button>
+                <button class="tab-btn active" onclick="cambiarTab('usuarios')">👥 Usuarios Registrados</button>
+                <button class="tab-btn" onclick="cambiarTab('contratos')">📄 Contratos Reales</button>
+                <button class="tab-btn" onclick="cambiarTab('disputas')">⚖️ Disputas</button>
             </div>
 
-            <!-- Módulo 1: Usuarios -->
+            <!-- Módulo 1: Usuarios (Consulta a tabla de usuarios/profiles) -->
             <div id="tab-usuarios" class="panel-section active">
-                <h3>Gestión de Usuarios y Permisos</h3>
-                <p style="font-size: 13px; color: #627d98; margin-bottom: 15px;">Asigna roles, restablece credenciales o suspende cuentas de la plataforma.</p>
+                <h3>Usuarios en Supabase</h3>
+                <p style="font-size: 13px; color: #627d98; margin-bottom: 15px;">Cargados automáticamente desde la base de datos.</p>
                 <table>
                     <thead>
                         <tr>
-                            <th>Usuario</th>
+                            <th>ID / UUID</th>
+                            <th>Nombre</th>
                             <th>Correo</th>
                             <th>Rol</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tablaUsuarios">
-                        <tr>
-                            <td>J. Martínez</td>
-                            <td>jmartinezl10@ucentral.edu.co</td>
-                            <td><span class="badge badge-admin">Administrador</span></td>
-                            <td><span class="badge badge-active">Activo</span></td>
-                            <td><button class="btn-action btn-edit">Editar</button></td>
-                        </tr>
-                        <tr>
-                            <td>Carlos Pérez</td>
-                            <td>carlos.perez@ejemplo.com</td>
-                            <td>Freelancer</td>
-                            <td><span class="badge badge-active">Activo</span></td>
-                            <td>
-                                <button class="btn-action btn-edit" onclick="alert('Enlace de restablecimiento enviado')">Clave</button>
-                                <button class="btn-action btn-danger" onclick="alert('Usuario suspendido')">Suspender</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Empresa Alpha SAS</td>
-                            <td>contacto@alpha.com</td>
-                            <td>Cliente</td>
-                            <td><span class="badge badge-active">Activo</span></td>
-                            <td>
-                                <button class="btn-action btn-edit" onclick="alert('Enlace de restablecimiento enviado')">Clave</button>
-                                <button class="btn-action btn-danger" onclick="alert('Usuario suspendido')">Suspender</button>
-                            </td>
-                        </tr>
+                        <tr><td colspan="4">Cargando usuarios...</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Módulo 2: Configuración -->
-            <div id="tab-configuracion" class="panel-section">
-                <h3>Configuración Global del Sistema</h3>
-                <div style="max-width: 500px; margin-top: 15px;">
-                    <div class="form-group">
-                        <label>Nombre de la plataforma</label>
-                        <input type="text" value="Contrato Limpio">
-                    </div>
-                    <div class="form-group">
-                        <label>Comisión por Custodia (%)</label>
-                        <input type="number" value="2.5">
-                    </div>
-                    <div class="form-group">
-                        <label>Modo Mantenimiento</label>
-                        <select id="maintenanceMode" style="width:100%; padding:10px; border-radius:8px;">
-                            <option value="off">Desactivado (Sitio Público)</option>
-                            <option value="on">Activado (Solo Admins)</option>
-                        </select>
-                    </div>
-                    <button class="btn-primary" style="margin-top:10px;" onclick="alert('Configuración guardada correctamente.')">Guardar Cambios</button>
-                </div>
-            </div>
-
-            <!-- Módulo 3: Seguridad y Logs -->
-            <div id="tab-seguridad" class="panel-section">
-                <h3>Registro de Actividad y Auditoría</h3>
+            <!-- Módulo 2: Contratos en tiempo real -->
+            <div id="tab-contratos" class="panel-section">
+                <h3>Contratos Creados</h3>
                 <table>
                     <thead>
                         <tr>
-                            <th>Fecha/Hora</th>
-                            <th>Usuario</th>
-                            <th>Acción</th>
-                            <th>Dirección IP</th>
+                            <th>Título del Contrato</th>
+                            <th>Monto Total</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>2026-09-29 09:30</td>
-                            <td>jmartinezl10@ucentral.edu.co</td>
-                            <td>Inicio de sesión en Panel Admin</td>
-                            <td>190.157.32.10</td>
-                        </tr>
-                        <tr>
-                            <td>2026-09-29 08:15</td>
-                            <td>carlos.perez@ejemplo.com</td>
-                            <td>Descarga de contrato (DOC)</td>
-                            <td>186.102.15.88</td>
-                        </tr>
+                    <tbody id="tablaContratos">
+                        <tr><td colspan="4">Cargando contratos...</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Módulo 4: Reportes y Backups -->
-            <div id="tab-reportes" class="panel-section">
-                <h3>Base de Datos y Copias de Seguridad</h3>
-                <p style="font-size: 14px; margin-bottom: 20px;">Genera e inmediatamente descarga respaldos o reportes de métricas.</p>
-                <button class="btn-primary" style="width: auto; padding: 12px 24px;" onclick="alert('Copia de seguridad generada e iniciada la descarga.')">📦 Descargar Backup Completo (.SQL)</button>
-                <button class="btn-action btn-edit" style="padding: 12px 24px; font-size: 14px;" onclick="alert('Reporte financiero exportado a CSV.')">📊 Exportar Reportes (CSV)</button>
+            <!-- Módulo 3: Disputas reales -->
+            <div id="tab-disputas" class="panel-section">
+                <h3>Disputas y Controversias</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Contrato</th>
+                            <th>Motivo / Razón</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaDisputas">
+                        <tr><td colspan="3">Cargando disputas...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
     <script>
+        // 1. Configuración de Supabase (Sustituye con tus credenciales de index.html)
+        const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
+        const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 2. Validar acceso
         function validarAcceso(event) {
             event.preventDefault();
             const email = document.getElementById('email').value.trim();
@@ -240,9 +193,109 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('adminDashboard').style.display = 'block';
                 errorMessage.textContent = '';
+                
+                // Cargar datos reales de Supabase al ingresar
+                cargarDatosDashboard();
             } else {
                 errorMessage.textContent = "Acceso denegado. Credenciales incorrectas.";
             }
+        }
+
+        // 3. Consultas en tiempo real a Supabase
+        async function cargarDatosDashboard() {
+            try {
+                // A) Consultar Usuarios (de tu tabla de perfiles/usuarios)
+                const { data: usuarios, count: userCount, error: errUsers } = await _supabase
+                    .from('profiles') // Si tu tabla se llama 'usuarios', cambia 'profiles' por 'usuarios'
+                    .select('*', { count: 'exact' });
+
+                if (!errUsers && usuarios) {
+                    document.getElementById('totalUsuarios').textContent = userCount || usuarios.length;
+                    renderUsuarios(usuarios);
+                } else {
+                    document.getElementById('totalUsuarios').textContent = '0';
+                    document.getElementById('tablaUsuarios').innerHTML = '<tr><td colspan="4">No se pudo cargar la lista de usuarios o la tabla no existe.</td></tr>';
+                }
+
+                // B) Consultar Contratos
+                const { data: contratos, count: contractCount, error: errContracts } = await _supabase
+                    .from('contratos')
+                    .select('*', { count: 'exact' });
+
+                if (!errContracts && contratos) {
+                    document.getElementById('totalContratos').textContent = contractCount || contratos.length;
+                    renderContratos(contratos);
+                } else {
+                    document.getElementById('totalContratos').textContent = '0';
+                    document.getElementById('tablaContratos').innerHTML = '<tr><td colspan="4">Sin contratos registrados.</td></tr>';
+                }
+
+                // C) Consultar Disputas
+                const { data: disputas, count: disputaCount, error: errDisputas } = await _supabase
+                    .from('disputas')
+                    .select('*', { count: 'exact' });
+
+                if (!errDisputas && disputas) {
+                    document.getElementById('totalDisputas').textContent = disputaCount || disputas.length;
+                    renderDisputas(disputas);
+                } else {
+                    document.getElementById('totalDisputas').textContent = '0';
+                    document.getElementById('tablaDisputas').innerHTML = '<tr><td colspan="3">Sin disputas registradas.</td></tr>';
+                }
+
+            } catch (err) {
+                console.error("Error al conectar con Supabase:", err);
+                document.getElementById('estadoConexion').textContent = '🔴 Error DB';
+                document.getElementById('estadoConexion').style.color = '#dc2626';
+            }
+        }
+
+        // 4. Renderizar tablas con HTML dinámico
+        function renderUsuarios(lista) {
+            const tbody = document.getElementById('tablaUsuarios');
+            if(lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4">No hay usuarios registrados.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = lista.map(u => `
+                <tr>
+                    <td style="font-size:11px; color:#627d98;">${u.id || 'N/A'}</td>
+                    <td><strong>${u.nombre || u.full_name || 'Sin Nombre'}</strong></td>
+                    <td>${u.correo || u.email || 'N/A'}</td>
+                    <td><span class="badge badge-active">${u.rol || 'Usuario'}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderContratos(lista) {
+            const tbody = document.getElementById('tablaContratos');
+            if(lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4">No hay contratos registrados.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = lista.map(c => `
+                <tr>
+                    <td><strong>${c.titulo || c.title || 'Contrato sin título'}</strong></td>
+                    <td>$${c.monto_total || c.monto || 0}</td>
+                    <td><span class="badge badge-pending">${c.estado || 'Activo'}</span></td>
+                    <td>${c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderDisputas(lista) {
+            const tbody = document.getElementById('tablaDisputas');
+            if(lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3">No hay disputas abiertas.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = lista.map(d => `
+                <tr>
+                    <td>${d.contrato_id || 'N/A'}</td>
+                    <td>${d.motivo || 'Sin detalle'}</td>
+                    <td><span class="badge badge-pending">${d.estado || 'Abierta'}</span></td>
+                </tr>
+            `).join('');
         }
 
         function cerrarSesion() {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contrato Claro - Plataforma Freelance con Hitos y Disputas</title>
+<title>Contrato Limpio - Plataforma Freelance con Hitos y Disputas</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -35,6 +35,8 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 .status-resuelta{background:#d1fae5;color:#065f46}
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(11,37,69,0.6);display:none;align-items:center;justify-content:center;z-index:9999}
 .modal-card{background:#fff;border-radius:14px;width:100%;max-width:550px;padding:24px;max-height:90vh;overflow-y:auto}
+.btn-download{background:#0b2545;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.btn-download:hover{background:#124e78}
 </style>
 </head>
 <body>
@@ -42,7 +44,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 <!-- AUTENTICACIÓN -->
 <div id="authScreen" class="auth-container">
   <div class="auth-card">
-    <div class="auth-brand"><div class="logo"></div>Contrato Claro</div>
+    <div class="auth-brand"><div class="logo"></div>Contrato Limpio</div>
     <p style="font-size:13px;color:#627d98;margin-bottom:18px">Contratos modulares con custodia e hitos de pago</p>
 
     <div class="auth-tabs">
@@ -92,7 +94,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 <!-- APLICACIÓN PRINCIPAL -->
 <div id="appRoot" class="app">
   <div style="background:#fff;padding:15px 28px;border-bottom:1px solid #d9e2ec;display:flex;justify-content:space-between;align-items:center">
-    <div style="font-weight:800;font-size:20px;display:flex;align-items:center;gap:10px"><div class="logo"></div>Contrato Claro</div>
+    <div style="font-weight:800;font-size:20px;display:flex;align-items:center;gap:10px"><div class="logo"></div>Contrato Limpio</div>
     <div style="display:flex;align-items:center;gap:10px">
       <span id="sessionBadge" style="background:#e9fbf1;color:#087c38;padding:5px 10px;border-radius:99px;font-size:12px;font-weight:800">● Sesión</span>
       <button onclick="handleLogout()" style="background:#d9e2ec;border:0;border-radius:50%;padding:6px 12px;font-weight:800;cursor:pointer">Salir</button>
@@ -114,7 +116,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
       <section id="view-inicio">
         <div style="background:linear-gradient(115deg,#0b2545,#124e78);padding:28px 30px;border-radius:17px;color:#fff;margin-bottom:29px">
           <h1 style="font-size:26px;margin:0 0 6px">Contratos Modulares, Hitos y Módulo de Disputas</h1>
-          <p style="opacity:0.87;margin:0">Gestión integral de contratos freelance con mediación directa, custodia y registro de evidencias.</p>
+          <p style="opacity:0.87;margin:0">Gestión integral de contratos freelance con mediación directa, custodia y descarga de documentos legales.</p>
         </div>
         
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px">
@@ -724,7 +726,10 @@ async function loadContracts() {
         <div style="background:#fff;border:1px solid ${disputaActiva ? '#fca5a5' : '#d9e2ec'};border-radius:14px;padding:20px;margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <h3 style="margin:0;font-size:16px;">${c.titulo}</h3>
-            <span style="background:#e9fbf1;color:#087c38;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;">Total: $${Number(c.valor || 0).toLocaleString('es-CO')} COP</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button onclick="descargarContrato('${c.id}')" class="btn-download">📥 Descargar Contrato (.DOC)</button>
+              <span style="background:#e9fbf1;color:#087c38;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;">Total: $${Number(c.valor || 0).toLocaleString('es-CO')} COP</span>
+            </div>
           </div>
           <div style="font-size:12px;color:#627d98;margin-bottom:12px;">
             <span>Rol en el contrato: <b>${miRolEnContrato}</b></span> | <span>Estado: <b>${c.estado}</b></span>
@@ -746,6 +751,123 @@ async function loadContracts() {
     }).join('');
   } catch (err) {
     container.innerHTML = '<p style="color:#b42318;background:#fee2e2;padding:12px;border-radius:8px;"><b>Error al cargar contratos:</b> ' + err.message + '</p>';
+  }
+}
+
+// ==============================================================================
+// FUNCIÓN PARA DESCARGAR EL CONTRATO EN FORMATO DOCUMENTO COMPLETO (.DOC / HTML)
+// ==============================================================================
+async function descargarContrato(contratoId) {
+  try {
+    var cRes = await supabase.from('contratos').select('*').eq('id', contratoId).single();
+    if (cRes.error) throw cRes.error;
+    var c = cRes.data;
+
+    var hRes = await supabase.from('hitos_contrato').select('*').eq('contrato_id', contratoId);
+    var hitos = hRes.data || [];
+
+    var pRes = await supabase.from('partes_contrato').select('rol_en_contrato, perfiles_usuario(nombre, correo)').eq('contrato_id', contratoId);
+    var partes = pRes.data || [];
+
+    var dRes = await supabase.from('disputas').select('*').eq('contrato_id', contratoId);
+    var disputas = dRes.data || [];
+
+    var partesHTML = partes.map(p => {
+      var name = p.perfiles_usuario ? p.perfiles_usuario.nombre : 'Usuario';
+      var mail = p.perfiles_usuario ? p.perfiles_usuario.correo : 'N/A';
+      return `<li><b>${p.rol_en_contrato}:</b> ${name} (${mail})</li>`;
+    }).join('');
+
+    var hitosHTML = hitos.map((h, index) => {
+      return `<tr>
+        <td style="padding:8px;border:1px solid #ccc;">${index + 1}</td>
+        <td style="padding:8px;border:1px solid #ccc;">${h.titulo}</td>
+        <td style="padding:8px;border:1px solid #ccc;">$${Number(h.monto).toLocaleString('es-CO')} COP</td>
+        <td style="padding:8px;border:1px solid #ccc;">${h.estado}</td>
+      </tr>`;
+    }).join('');
+
+    var disputasHTML = disputas.map(d => {
+      return `<div style="background:#fff0f0;border:1px solid #ffcccc;padding:10px;margin-top:10px;border-radius:5px;">
+        <p><b>Estado de Disputa:</b> ${d.estado}</p>
+        <p><b>Motivo:</b> ${d.motivo}</p>
+        <p><b>Descripción:</b> ${d.descripcion}</p>
+        <p><b>Monto Reclamado:</b> $${Number(d.monto_reclamado || 0).toLocaleString('es-CO')} COP</p>
+        <p><b>Propuesta:</b> ${d.propuesta_solucion || 'N/A'}</p>
+      </div>`;
+    }).join('');
+
+    var docHTML = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>${c.titulo}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 30px; color: #102a43; line-height: 1.6; }
+          h1 { color: #0b2545; border-bottom: 2px solid #00a6a6; padding-bottom: 8px; }
+          h2 { color: #124e78; margin-top: 20px; }
+          .header-info { background: #f0f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th { background: #0b2545; color: #ffffff; padding: 8px; border: 1px solid #ccc; text-align: left; }
+          .clausula { white-space: pre-wrap; background: #fafbfc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 12px; }
+          .footer { margin-top: 40px; font-size: 11px; color: #627d98; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <h1>CONTRATO LIMPIO - ACUERDO DE SERVICIOS</h1>
+        
+        <div class="header-info">
+          <p><b>Título del Proyecto:</b> ${c.titulo}</p>
+          <p><b>Tipo de Servicio:</b> ${c.tipo}</p>
+          <p><b>Valor Total del Contrato:</b> $${Number(c.valor || 0).toLocaleString('es-CO')} COP</p>
+          <p><b>Forma de Pago:</b> ${c.forma_pago}</p>
+          <p><b>Estado Actual:</b> ${c.estado}</p>
+          <p><b>Fecha de Registro:</b> ${new Date(c.created_at).toLocaleDateString('es-CO')}</p>
+        </div>
+
+        <h2>PARTES CONTRATANTES</h2>
+        <ul>${partesHTML || '<li>No hay partes registradas</li>'}</ul>
+
+        <h2>CLÁUSULAS DEL CONTRATO</h2>
+        <div class="clausula">${c.objeto}</div>
+
+        <h2>ENTREGABLES E HITOS DE PAGO</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Entregable / Descripción</th>
+              <th>Monto (COP)</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${hitosHTML || '<tr><td colspan="4">Sin hitos registrados</td></tr>'}
+          </tbody>
+        </table>
+
+        ${disputas.length > 0 ? `<h2>HISTORIAL DE DISPUTAS Y CONTROVERSIAS</h2>${disputasHTML}` : ''}
+
+        <div class="footer">
+          Documento generado automáticamente a través de la plataforma <b>Contrato Limpio</b>.<br>
+          Validez y resguardo digital en custodia (Escrow).
+        </div>
+      </body>
+      </html>
+    `;
+
+    var blob = new Blob(['\ufeff', docHTML], { type: 'application/msword' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = `Contrato_${c.titulo.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${c.id}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+  } catch (err) {
+    alert('Error al generar la descarga del contrato: ' + err.message);
   }
 }
 

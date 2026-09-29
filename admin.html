@@ -231,17 +231,18 @@
         }
 
         // C) Consultar Partes / Usuarios
-        const { data: partes, error: errPartes } = await _supabase
-            .from('partes_contrato')
+        // C) Consultar Perfiles de Usuario
+        const { data: usuarios, error: errUsuarios } = await _supabase
+            .from('perfiles_usuario') // Nombre exacto de tu tabla de perfiles
             .select('*');
 
-        if (errPartes) {
-            console.error("Error al cargar partes:", errPartes);
-            document.getElementById('tablaUsuarios').innerHTML = `<tr><td colspan="4" style="color:red;">Error: ${errPartes.message}</td></tr>`;
+        if (errUsuarios) {
+            console.error("Error al cargar usuarios:", errUsuarios);
+            document.getElementById('tablaUsuarios').innerHTML = `<tr><td colspan="4" style="color:red;">Error: ${errUsuarios.message}</td></tr>`;
             document.getElementById('totalUsuarios').textContent = '0';
-        } else if (partes) {
-            document.getElementById('totalUsuarios').textContent = partes.length;
-            renderUsuarios(partes);
+        } else if (usuarios) {
+            document.getElementById('totalUsuarios').textContent = usuarios.length;
+            renderUsuarios(usuarios);
         }
     }
 

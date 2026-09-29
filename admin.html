@@ -4,222 +4,261 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrador - Contrato Limpio</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            max-width: 850px;
-            width: 100%;
-            background: #ffffff;
-            padding: 35px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            margin-top: 20px;
-        }
-        h2, h3 {
-            color: #1e293b;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        input[type="email"], input[type="password"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 15px;
-        }
-        button {
-            background-color: #2563eb;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-        button:hover {
-            background-color: #1d4ed8;
-        }
-        .error {
-            color: #dc2626;
-            margin-top: 15px;
-            font-weight: 600;
-            text-align: center;
-        }
-        #adminPanel {
-            display: none;
-        }
-        ul {
-            line-height: 1.6;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: #fff;
-        }
-        th, td {
-            border: 1px solid #e2e8f0;
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #1e293b;
-            color: white;
-        }
-        .btn-logout {
-            background-color: #ef4444;
-            margin-top: 25px;
-        }
-        .btn-logout:hover {
-            background-color: #dc2626;
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 15px;
-            color: #2563eb;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        .back-link:hover {
-            text-decoration: underline;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f6f9fc; color: #102a43; }
+        
+        /* Auth Screen */
+        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#0b2545,#124e78); padding: 20px; }
+        .auth-card { background: #fff; border-radius: 16px; padding: 32px; width: 100%; max-width: 400px; box-shadow: 0 14px 40px rgba(16,42,67,0.1); }
+        .auth-brand { font-weight: 800; font-size: 20px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+        .logo { width: 32px; height: 32px; background: #0b2545; border-radius: 8px; position: relative; }
+        .logo:after { content: "✓"; position: absolute; color: #fff; font-weight: 900; font-size: 20px; left: 7px; top: -2px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 800; margin-bottom: 6px; color: #334e68; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #bcccdc; border-radius: 8px; font-size: 14px; }
+        .btn-primary { width: 100%; background: #00a6a6; color: #fff; border: 0; border-radius: 99px; padding: 11px 15px; font-weight: 800; cursor: pointer; font-size: 15px; }
+        .btn-primary:hover { background: #008f8f; }
+        .error { color: #dc2626; margin-top: 10px; font-weight: bold; font-size: 13px; text-align: center; }
+
+        /* Dashboard Layout */
+        #adminDashboard { display: none; }
+        .header { background: #0b2545; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; display: flex; align-items: center; gap: 10px; }
+        .btn-logout { background: #e63946; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        .main-content { padding: 30px; max-width: 1200px; margin: auto; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 5px solid #00a6a6; }
+        .stat-card h4 { color: #627d98; font-size: 13px; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-card .number { font-size: 28px; font-weight: 800; color: #102a43; }
+
+        /* Tabs Navigation */
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+        .tab-btn { background: none; border: none; padding: 12px 20px; font-size: 15px; font-weight: bold; color: #627d98; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: #00a6a6; border-bottom-color: #00a6a6; }
+
+        /* Tables & Cards */
+        .panel-section { display: none; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .panel-section.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background: #f8fafc; color: #334e68; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .badge-active { background: #d1fae5; color: #065f46; }
+        .badge-admin { background: #e0f2fe; color: #0369a1; }
+        
+        .btn-action { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-edit { background: #2563eb; color: white; }
+        .btn-danger { background: #dc2626; color: white; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <a href="index.html" class="back-link">← Volver al sitio principal</a>
-
-    <!-- Formulario de Inicio de Sesión -->
-    <div id="loginBox">
-        <h2>Acceso Restringido - Administrador</h2>
-        <p>Introduce tus credenciales autorizadas para gestionar el entorno.</p>
-        <form onsubmit="validarAcceso(event)">
-            <div class="form-group">
-                <label for="email">Correo electrónico:</label>
-                <input type="email" id="email" required placeholder="correo@ucentral.edu.co">
+    <!-- Pantalla de Login -->
+    <div id="loginScreen" class="auth-container">
+        <div class="auth-card">
+            <div class="auth-brand"><div class="logo"></div>Contrato Limpio</div>
+            <p style="font-size:13px;color:#627d98;margin-bottom:20px">Acceso Privado de Administración</p>
+            
+            <form onsubmit="validarAcceso(event)">
+                <div class="form-group">
+                    <label>Correo electrónico</label>
+                    <input type="email" id="email" required placeholder="jmartinezl10@ucentral.edu.co">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary">Ingresar al Panel</button>
+            </form>
+            <p id="errorMessage" class="error"></p>
+            <div style="text-align:center; margin-top:15px;">
+                <a href="index.html" style="font-size:12px; color:#627d98; text-decoration:none;">← Volver al sitio principal</a>
             </div>
-            <div class="form-group">
-                <label for="password">Contraseña:</label>
-                <input type="password" id="password" required placeholder="••••••••••">
-            </div>
-            <button type="submit">Ingresar al Panel</button>
-        </form>
-        <p id="errorMessage" class="error"></p>
+        </div>
     </div>
 
-    <!-- Panel de Información del Administrador -->
-    <div id="adminPanel">
-        <h2>Perfil de Administrador</h2>
-        <p>Un perfil de administrador es el nivel de cuenta con el mayor control y privilegios dentro de un sistema informático, sitio web, aplicación o red empresarial. Su función principal es gestionar el entorno completo, asegurar su correcto funcionamiento y controlar qué pueden o no hacer los demás usuarios.</p>
-        
-        <p>A continuación, se detalla cómo funciona a través de sus capacidades principales:</p>
+    <!-- Dashboard Administrador -->
+    <div id="adminDashboard">
+        <div class="header">
+            <h1><div class="logo"></div> Panel de Administración</h1>
+            <div>
+                <span style="font-size: 14px; margin-right: 15px;">👤 jmartinezl10@ucentral.edu.co</span>
+                <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+            </div>
+        </div>
 
-        <h3>⚙️ Gestión del Sistema y Configuración</h3>
-        <ul>
-            <li><strong>Control total:</strong> El administrador puede cambiar la configuración global del sistema, modificar la apariencia, alterar las políticas de seguridad y ajustar los parámetros operativos.</li>
-            <li><strong>Instalación y actualización:</strong> Tiene permisos para instalar o desinstalar software, aplicaciones, complementos (plugins) y parches de seguridad críticos que afectan a todo el entorno.</li>
-        </ul>
+        <div class="main-content">
+            <!-- Métricas globales (KPIs) -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Usuarios Registrados</h4>
+                    <div class="number" id="totalUsuarios">124</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Contratos Activos</h4>
+                    <div class="number" id="totalContratos">48</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Disputas Abiertas</h4>
+                    <div class="number" style="color: #dc2626;">2</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Estado del Sistema</h4>
+                    <div class="number" style="color: #10b981; font-size: 20px;">🟢 Operativo</div>
+                </div>
+            </div>
 
-        <h3>👥 Control de Usuarios y Permisos</h3>
-        <ul>
-            <li><strong>Creación y eliminación:</strong> Puede dar de alta a nuevos usuarios, suspender cuentas inactivas o eliminar perfiles de la base de datos.</li>
-            <li><strong>Asignación de roles:</strong> Define el nivel de acceso de cada persona (por ejemplo, perfil de editor, moderador, cliente o empleado), asegurando que cada quien acceda solo a lo que necesita.</li>
-            <li><strong>Restablecimiento de credenciales:</strong> Si un usuario olvida su contraseña o bloquea su cuenta, el administrador puede restablecer sus accesos.</li>
-        </ul>
+            <!-- Navegación por pestañas -->
+            <div class="nav-tabs">
+                <button class="tab-btn active" onclick="cambiarTab('usuarios')">👥 Gestión de Usuarios</button>
+                <button class="tab-btn" onclick="cambiarTab('configuracion')">⚙️ Configuración Sistema</button>
+                <button class="tab-btn" onclick="cambiarTab('seguridad')">🔒 Seguridad y Logs</button>
+                <button class="tab-btn" onclick="cambiarTab('reportes')">📊 Reportes y Backups</button>
+            </div>
 
-        <h3>🔒 Seguridad y Auditoría</h3>
-        <ul>
-            <li><strong>Monitoreo:</strong> Tiene acceso a los registros de actividad (logs) para ver quién se ha conectado, desde dónde y qué acciones realizó dentro del sistema.</li>
-            <li><strong>Respaldos:</strong> Es el encargado de programar, realizar y restaurar copias de seguridad (backups) para proteger la información ante fallos o ciberataques.</li>
-        </ul>
+            <!-- Módulo 1: Usuarios -->
+            <div id="tab-usuarios" class="panel-section active">
+                <h3>Gestión de Usuarios y Permisos</h3>
+                <p style="font-size: 13px; color: #627d98; margin-bottom: 15px;">Asigna roles, restablece credenciales o suspende cuentas de la plataforma.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Correo</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaUsuarios">
+                        <tr>
+                            <td>J. Martínez</td>
+                            <td>jmartinezl10@ucentral.edu.co</td>
+                            <td><span class="badge badge-admin">Administrador</span></td>
+                            <td><span class="badge badge-active">Activo</span></td>
+                            <td><button class="btn-action btn-edit">Editar</button></td>
+                        </tr>
+                        <tr>
+                            <td>Carlos Pérez</td>
+                            <td>carlos.perez@ejemplo.com</td>
+                            <td>Freelancer</td>
+                            <td><span class="badge badge-active">Activo</span></td>
+                            <td>
+                                <button class="btn-action btn-edit" onclick="alert('Enlace de restablecimiento enviado')">Clave</button>
+                                <button class="btn-action btn-danger" onclick="alert('Usuario suspendido')">Suspender</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Empresa Alpha SAS</td>
+                            <td>contacto@alpha.com</td>
+                            <td>Cliente</td>
+                            <td><span class="badge badge-active">Activo</span></td>
+                            <td>
+                                <button class="btn-action btn-edit" onclick="alert('Enlace de restablecimiento enviado')">Clave</button>
+                                <button class="btn-action btn-danger" onclick="alert('Usuario suspendido')">Suspender</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <h3>📊 Acceso a Datos y Reportes</h3>
-        <ul>
-            <li><strong>Visualización global:</strong> A diferencia de un usuario común, el administrador puede ver estadísticas generales, reportes financieros, bases de datos completas y métricas de rendimiento del sistema.</li>
-        </ul>
+            <!-- Módulo 2: Configuración -->
+            <div id="tab-configuracion" class="panel-section">
+                <h3>Configuración Global del Sistema</h3>
+                <div style="max-width: 500px; margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Nombre de la plataforma</label>
+                        <input type="text" value="Contrato Limpio">
+                    </div>
+                    <div class="form-group">
+                        <label>Comisión por Custodia (%)</label>
+                        <input type="number" value="2.5">
+                    </div>
+                    <div class="form-group">
+                        <label>Modo Mantenimiento</label>
+                        <select id="maintenanceMode" style="width:100%; padding:10px; border-radius:8px;">
+                            <option value="off">Desactivado (Sitio Público)</option>
+                            <option value="on">Activado (Solo Admins)</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" style="margin-top:10px;" onclick="alert('Configuración guardada correctamente.')">Guardar Cambios</button>
+                </div>
+            </div>
 
-        <h3>🔄 Diferencia con otros perfiles</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Perfil</th>
-                    <th>Nivel de Acceso</th>
-                    <th>Funciones Principales</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>Administrador</strong></td>
-                    <td>Total</td>
-                    <td>Configurar el sistema, gestionar usuarios, instalar software y manejar la seguridad.</td>
-                </tr>
-                <tr>
-                    <td><strong>Editor / Moderador</strong></td>
-                    <td>Medio</td>
-                    <td>Gestionar y publicar contenido, o moderar las interacciones de otros usuarios.</td>
-                </tr>
-                <tr>
-                    <td><strong>Usuario Estándar / Cliente</strong></td>
-                    <td>Limitado</td>
-                    <td>Consumir el servicio, modificar su propio perfil y realizar tareas básicas asignadas.</td>
-                </tr>
-            </tbody>
-        </table>
+            <!-- Módulo 3: Seguridad y Logs -->
+            <div id="tab-seguridad" class="panel-section">
+                <h3>Registro de Actividad y Auditoría</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Usuario</th>
+                            <th>Acción</th>
+                            <th>Dirección IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2026-09-29 09:30</td>
+                            <td>jmartinezl10@ucentral.edu.co</td>
+                            <td>Inicio de sesión en Panel Admin</td>
+                            <td>190.157.32.10</td>
+                        </tr>
+                        <tr>
+                            <td>2026-09-29 08:15</td>
+                            <td>carlos.perez@ejemplo.com</td>
+                            <td>Descarga de contrato (DOC)</td>
+                            <td>186.102.15.88</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+            <!-- Módulo 4: Reportes y Backups -->
+            <div id="tab-reportes" class="panel-section">
+                <h3>Base de Datos y Copias de Seguridad</h3>
+                <p style="font-size: 14px; margin-bottom: 20px;">Genera e inmediatamente descarga respaldos o reportes de métricas.</p>
+                <button class="btn-primary" style="width: auto; padding: 12px 24px;" onclick="alert('Copia de seguridad generada e iniciada la descarga.')">📦 Descargar Backup Completo (.SQL)</button>
+                <button class="btn-action btn-edit" style="padding: 12px 24px; font-size: 14px;" onclick="alert('Reporte financiero exportado a CSV.')">📊 Exportar Reportes (CSV)</button>
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-    function validarAcceso(event) {
-        event.preventDefault();
+    <script>
+        function validarAcceso(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
 
-        const emailInput = document.getElementById('email').value.trim();
-        const passwordInput = document.getElementById('password').value;
-        const errorMessage = document.getElementById('errorMessage');
-
-        // Credenciales restringidas
-        const correoAutorizado = "jmartinezl10@ucentral.edu.co";
-        const claveAutorizada = "1234567890";
-
-        if (emailInput === correoAutorizado && passwordInput === claveAutorizada) {
-            document.getElementById('loginBox').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'block';
-            errorMessage.textContent = '';
-        } else {
-            errorMessage.textContent = "Acceso denegado. Correo o contraseña incorrectos.";
+            if (email === "jmartinezl10@ucentral.edu.co" && password === "1234567890") {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                errorMessage.textContent = '';
+            } else {
+                errorMessage.textContent = "Acceso denegado. Credenciales incorrectas.";
+            }
         }
-    }
 
-    function cerrarSesion() {
-        document.getElementById('email').value = '';
-        document.getElementById('password').value = '';
-        document.getElementById('loginBox').style.display = 'block';
-        document.getElementById('adminPanel').style.display = 'none';
-        document.getElementById('errorMessage').textContent = '';
-    }
-</script>
+        function cerrarSesion() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
 
+        function cambiarTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+    </script>
 </body>
 </html>

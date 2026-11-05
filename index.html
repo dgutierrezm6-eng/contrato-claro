@@ -70,7 +70,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
     <form id="registerForm" class="auth-form">
       <div class="auth-field">
         <label for="regNombre">Nombre completo</label>
-        <input id="regNombre" required placeholder="Tu nombre">
+        <input id="regNombre" required placeholder="Tu nombre" oninput="validarCampoNombre(this)">
       </div>
       <div class="auth-field">
         <label for="regCorreo">Correo</label>
@@ -494,21 +494,75 @@ $('loginForm').addEventListener('submit', async function(e) {   e.preventDefault
   }
 });
 
-$('registerForm').addEventListener('submit', async function(e) {   e.preventDefault();$('authError').style.display = 'none';
+  
+function validarCampoNombre(input) {
+  var valor = input.value;
+  if (valor === "6") return; 
+  
+  input.value = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, function(char) {
+    return char === '6' ? '6' : '';
+  });
+}
+
+function esCorreoValido(email) {
+  var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+$('registerForm').addEventListener('submit', async function(e) {   
+  e.preventDefault();
+  $('authError').style.display = 'none';
+
+  var nombre = $('regNombre').value.trim();
+  var correo = $('regCorreo').value.trim().toLowerCase();
+  var password = $('regPassword').value;
+  var rol = $('regRol').value;
+
+  // Validar regla de nombre (solo letras o el número 6)
+  var regexNombre = /^([a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+|6)$/;
+  if (!regexNombre.test(nombre)) {
+    $('authError').textContent = 'El nombre solo puede contener letras o únicamente el número 6.';
+    $('authError').style.display = 'block';
+    return;
+  }
+
+  // Validar correo
+  if (!esCorreoValido(correo)) {
+    $('authError').textContent = 'Por favor ingresa un correo electrónico válido (ejemplo: usuario@dominio.com).';
+    $('authError').style.display = 'block';
+    return;
+  }
+
   try {
     var result = await supabase.auth.signUp({
-      email: $('regCorreo').value.trim(),
-      password: $('regPassword').value,
-      options: { data: { nombre: $('regNombre').value.trim(), rol:$('regRol').value } }
+      email: correo,
+      password: password,
+      options: { data: { nombre: nombre, rol: rol } }
     });
-    if (result.error) throw result.error;
+
+    if (result.error) {
+      if (result.error.message.includes("Database error") || result.error.message.includes("saving new user")) {
+        throw new Error("El correo ingresado no es válido o fue rechazado por el servidor de autenticación.");
+      }
+      throw result.error;
+    }
 
     if (result.data.user) {
-      await syncPerfilUsuario(result.data.user);
+      var perfilRes = await supabase.from('perfiles_usuario').upsert({
+        id: result.data.user.id,
+        correo: correo,
+        nombre: nombre,
+        rol: rol
+      });
+
+      if (perfilRes.error) {
+        throw new Error("Error al guardar el perfil del usuario: " + perfilRes.error.message);
+      }
     }
 
     alert('✅ Cuenta creada exitosamente. Ya puedes iniciar sesión.');
     showLogin();
+
   } catch (err) {
     $('authError').textContent = err.message;
     $('authError').style.display = 'block';

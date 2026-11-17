@@ -1,0 +1,4 @@
+[tool.mutmut]
+source_paths = ["backend"]
+also_copy = ["pytest.ini", "index.html", "admin.html"]
+pytest_add_cli_args_test_selection = ["tests/unit", "tests/integration"]

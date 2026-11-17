@@ -1,0 +1,50 @@
+name: QA Pipeline 10 Niveles - Contrato Claro
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  quality-assurance-pipeline:
+    name: Ejecutar Suite Integral de Pruebas (Niveles 1 a 9)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: 3. Instalar dependencias y navegador Playwright
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest pytest-cov playwright behave bandit pip-audit mutmut
+          playwright install --with-deps chromium
+
+      - name: 4. Niveles 1 y 2 - Pruebas Unitarias, Integración y Cobertura
+        run: pytest tests/unit tests/integration --cov=backend --cov-report=term-missing -v
+
+      - name: 5. Nivel 4 - Pruebas End-to-End (E2E) con Playwright
+        run: pytest tests/e2e -v
+
+      - name: 6. Nivel 5 - Pruebas de Aceptación BDD (Behave / Gherkin)
+        run: behave
+
+      - name: 7. Nivel 7 - Auditoría de Seguridad (SAST Bandit, CVEs y API)
+        run: |
+          bandit -r backend/
+          pip-audit -r backend/requirements.txt
+          pytest tests/security -v
+
+      - name: 8. Nivel 8 - Auditoría de Accesibilidad WCAG 2.1 AA (axe-core)
+        run: pytest tests/accessibility -v
+
+      - name: 9. Nivel 9 - Pruebas de Mutación (mutmut)
+        run: mutmut run

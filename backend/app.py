@@ -23,19 +23,17 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ==============================================================================
 # 1. SERVIR EL FRONTEND
 # ==============================================================================
-@app.route('/')
 def index():
     """Sirve el archivo HTML principal desde la raíz o directorio local"""
     if os.path.exists('index.html'):
-        return send_file('index.html')
+        return send_file(os.path.abspath('index.html'))
     elif os.path.exists('../index.html'):
-        return send_file('../index.html')
+        return send_file(os.path.abspath('../index.html'))
     return jsonify({"status": "API Contrato Claro en ejecución"}), 200
 
 # ==============================================================================
 # 2. CREACIÓN DE CONTRATO
 # ==============================================================================
-@app.route('/api/contratos/crear', methods=['POST'])
 def crear_contrato():
     """
     Crea un contrato, vincula partes y guarda hitos en 'hitos_contrato'.
@@ -124,7 +122,6 @@ def crear_contrato():
 # ==============================================================================
 # 3. GESTIÓN DE ESCROW (CUSTODIA)
 # ==============================================================================
-@app.route('/api/escrow/depositar', methods=['POST'])
 def depositar_escrow():
     """Registra el depósito de fondos para un contrato."""
     data = request.json or {}
@@ -151,7 +148,6 @@ def depositar_escrow():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/escrow/liberar', methods=['POST'])
 def liberar_escrow():
     """Libera los fondos del contrato o hito específico."""
     data = request.json or {}
@@ -186,7 +182,6 @@ def liberar_escrow():
 # ==============================================================================
 # 4. RESOLUCIÓN DE DISPUTAS
 # ==============================================================================
-@app.route('/api/disputas/resolver', methods=['POST'])
 def resolver_disputa():
     """Dictamina el destino de los fondos retenidos."""
     data = request.json or {}
@@ -222,6 +217,14 @@ def resolver_disputa():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+app.add_url_rule('/', view_func=index)
+app.add_url_rule('/api/contratos/crear', methods=['POST'], view_func=crear_contrato)
+app.add_url_rule('/api/escrow/depositar', methods=['POST'], view_func=depositar_escrow)
+app.add_url_rule('/api/escrow/liberar', methods=['POST'], view_func=liberar_escrow)
+app.add_url_rule('/api/disputas/resolver', methods=['POST'], view_func=resolver_disputa)
+
 if __name__ == '__main__':
+    host = os.environ.get('HOST', '127.0.0.1')
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host=host, port=port, debug=debug_mode)

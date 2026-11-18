@@ -1,0 +1,100 @@
+{
+  "info": {
+    "name": "Contrato Claro",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Home",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/"
+      }
+    },
+    {
+      "name": "2. Crear",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/contratos/crear",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"titulo\":\"Web\",\"creador_id\":\"u1\"}"
+        }
+      }
+    },
+    {
+      "name": "3. Error 400",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/contratos/crear",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"titulo\":\"Sin creador\"}"
+        }
+      }
+    },
+    {
+      "name": "4. Depositar",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/escrow/depositar",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"contrato_id\":1,\"monto\":500}"
+        }
+      }
+    },
+    {
+      "name": "5. Liberar",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/escrow/liberar",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"contrato_id\":1,\"hito_id\":1}"
+        }
+      }
+    },
+    {
+      "name": "6. Disputa 404",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/disputas/resolver",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"disputa_id\":999,\"resolucion\":\"OK\",\"accion_fondos\":\"devolver_cliente\"}"
+        }
+      }
+    }
+  ]
+}

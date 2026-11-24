@@ -217,11 +217,127 @@ def resolver_disputa():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ==============================================================================
+# 5. CONTROL DE ALCANCE (SCOPE CREEP) Y ADENDAS DE DOBLE ACEPTACIÓN
+# ==============================================================================
+def solicitar_adenda():
+    """Registra una propuesta de adenda (nueva parte/costo) firmada por el solicitante."""
+    data = request.json or {}
+    contrato_id = data.get('contrato_id')
+    solicitante_id = data.get('solicitante_id')
+    titulo_hito = data.get('titulo_hito')
+    descripcion_cambio = data.get('descripcion_cambio', '')
+    monto_adicional = float(data.get('monto_adicional', 0) or 0)
+    dias_extra = int(data.get('dias_extra', 0) or 0)
+
+    if not contrato_id or not solicitante_id or not titulo_hito:
+        return jsonify({"error": "Faltan datos obligatorios (contrato_id, solicitante_id, titulo_hito)"}), 400
+
+    try:
+        res = supabase.table('adendas_contrato').insert({
+            "contrato_id": contrato_id,
+            "solicitante_id": solicitante_id,
+            "titulo_hito": titulo_hito,
+            "descripcion_cambio": descripcion_cambio,
+            "monto_adicional": monto_adicional,
+            "dias_extra": dias_extra,
+            "estado": "PENDIENTE",
+            "aceptado_por_solicitante": True,
+            "aceptado_por_contraparte": False
+        }).execute()
+
+        return jsonify({
+            "message": "Adenda propuesta. Pendiente de aceptación por la contraparte.",
+            "data": res.data
+        }), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+def responder_adenda():
+    """Procesa la aceptación o rechazo de la contraparte. Si acepta, actualiza contrato, hitos y escrow."""
+    data = request.json or {}
+    adenda_id = data.get('adenda_id')
+    decision = data.get('decision')  # 'aceptar' o 'rechazar'
+
+    if not adenda_id or decision not in ('aceptar', 'rechazar'):
+        return jsonify({"error": "Se requiere adenda_id y decision ('aceptar' o 'rechazar')"}), 400
+
+    try:
+        res_adenda = supabase.table('adendas_contrato').select('*').eq('id', adenda_id).execute()
+        if not res_adenda.data:
+            return jsonify({"error": "Adenda no encontrada"}), 404
+
+        adenda = res_adenda.data[0]
+        if adenda.get('estado') != 'PENDIENTE':
+            return jsonify({"error": "Esta adenda ya fue procesada previamente"}), 400
+
+        if decision == 'rechazar':
+            supabase.table('adendas_contrato').update({
+                "estado": "RECHAZADA",
+                "aceptado_por_contraparte": False
+            }).eq('id', adenda_id).execute()
+            return jsonify({"message": "Adenda rechazada. El contrato original se mantiene sin cambios."}), 200
+
+        # 1. Marcar doble aceptación
+        supabase.table('adendas_contrato').update({
+            "estado": "APROBADA",
+            "aceptado_por_contraparte": True
+        }).eq('id', adenda_id).execute()
+
+        contrato_id = adenda['contrato_id']
+        monto_extra = float(adenda.get('monto_adicional') or 0)
+        dias_extra = int(adenda.get('dias_extra') or 0)
+
+        # 2. Crear el nuevo hito en hitos_contrato
+        supabase.table('hitos_contrato').insert({
+            "contrato_id": contrato_id,
+            "titulo": f"[Adenda #{adenda_id}] {adenda['titulo_hito']}",
+            "monto": monto_extra,
+            "estado": "Pendiente"
+        }).execute()
+
+        # 3. Actualizar valor total y anexar cláusula modificatoria al contrato
+        res_contrato = supabase.table('contratos').select('valor, objeto').eq('id', contrato_id).execute()
+        if res_contrato.data:
+            contrato_actual = res_contrato.data[0]
+            nuevo_valor = float(contrato_actual.get('valor') or 0) + monto_extra
+            clausula_adenda = (
+                f"\n\n--- ADENDA MODIFICATORIA #{adenda_id} (APROBADA POR AMBAS PARTES) ---\n"
+                f"Nuevo Entregable: {adenda['titulo_hito']}\n"
+                f"Alcance: {adenda['descripcion_cambio']}\n"
+                f"Incremento de Costo: ${monto_extra:,.0f} COP | Plazo adicional: {dias_extra} días."
+            )
+            nuevo_objeto = (contrato_actual.get('objeto') or '') + clausula_adenda
+
+            supabase.table('contratos').update({
+                "valor": nuevo_valor,
+                "objeto": nuevo_objeto,
+                "estado": "Activo (Fondeado)"
+            }).eq('id', contrato_id).execute()
+
+        # 4. Ampliar custodia Escrow si hubo incremento de costo
+        if monto_extra > 0:
+            supabase.table('custodia_escrow').insert({
+                "contrato_id": contrato_id,
+                "monto": monto_extra,
+                "estado": "En Custodia",
+                "referencia_pago": f"TXN-{contrato_id}-ADN-{adenda_id}"
+            }).execute()
+
+        return jsonify({"message": "Adenda aceptada por ambas partes. Contrato, hitos y custodia actualizados."}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 app.add_url_rule('/', view_func=index)
 app.add_url_rule('/api/contratos/crear', methods=['POST'], view_func=crear_contrato)
 app.add_url_rule('/api/escrow/depositar', methods=['POST'], view_func=depositar_escrow)
 app.add_url_rule('/api/escrow/liberar', methods=['POST'], view_func=liberar_escrow)
 app.add_url_rule('/api/disputas/resolver', methods=['POST'], view_func=resolver_disputa)
+
+app.add_url_rule('/api/adendas/solicitar', methods=['POST'], view_func=solicitar_adenda)
+app.add_url_rule('/api/adendas/responder', methods=['POST'], view_func=responder_adenda)
 
 if __name__ == '__main__':
     host = os.environ.get('HOST', '127.0.0.1')

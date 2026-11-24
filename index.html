@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Contrato Limpio - Plataforma Freelance con Hitos y Disputas</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
+body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43;transition:background 0.25s ease}
 .auth-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0b2545,#124e78);padding:20px}
 .auth-card{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 14px 40px rgba(16,42,67,0.1)}
 .auth-brand{font-weight:800;font-size:20px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
@@ -21,6 +22,7 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 .auth-field input,.auth-field select{width:100%;padding:10px;border:1px solid #bcccdc;border-radius:8px;font-size:14px}
 .btn-primary{width:100%;background:#007a7a;color:#fff;border:0;border-radius:99px;padding:11px 15px;font-weight:800;cursor:pointer;font-size:15px}
 .btn-primary:hover{background:#008f8f}
+.btn-primary:disabled{opacity:0.6;cursor:not-allowed}
 .alert{background:#fef2f0;color:#b42318;padding:12px;border-radius:7px;margin:16px 0;border-left:4px solid #b42318;display:none}
 .auth-form{display:none}
 .auth-form.active{display:block}
@@ -37,6 +39,38 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
 .modal-card{background:#fff;border-radius:14px;width:100%;max-width:550px;padding:24px;max-height:90vh;overflow-y:auto}
 .btn-download{background:#0b2545;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .btn-download:hover{background:#124e78}
+
+/* Etiqueta de rol en esquina superior */
+.role-corner-badge{
+  padding:6px 12px;
+  border-radius:99px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:0.3px;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+
+/* Tema Freelancer / Contratista (Verde Esmeralda / Teal) */
+body.theme-freelancer{background:#f0fdfa}
+body.theme-freelancer .role-corner-badge{background:#0f766e;color:#ffffff}
+body.theme-freelancer .btn-primary,
+body.theme-freelancer .btn-download{background:#0f766e}
+body.theme-freelancer .btn-primary:hover,
+body.theme-freelancer .btn-download:hover{background:#115e59}
+body.theme-freelancer #heroBanner{background:linear-gradient(115deg,#134e4a,#0f766e) !important}
+body.theme-freelancer #topHeaderBar{border-bottom:3px solid #0f766e !important}
+
+/* Tema Cliente / Contratante (Azul Índigo / Navy) */
+body.theme-cliente{background:#eff6ff}
+body.theme-cliente .role-corner-badge{background:#1e40af;color:#ffffff}
+body.theme-cliente .btn-primary,
+body.theme-cliente .btn-download{background:#1e40af}
+body.theme-cliente .btn-primary:hover,
+body.theme-cliente .btn-download:hover{background:#1e3a8a}
+body.theme-cliente #heroBanner{background:linear-gradient(115deg,#0b2545,#1d4ed8) !important}
+body.theme-cliente #topHeaderBar{border-bottom:3px solid #1e40af !important}
 </style>
 </head>
 <body>
@@ -46,7 +80,6 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
   <div class="auth-card">
     <div class="auth-brand"><div class="logo"></div>Contrato Limpio</div>
     <p style="font-size:13px;color:#486581;margin-bottom:18px">Contratos modulares con custodia e hitos de pago</p>
-
 
     <div class="auth-tabs">
       <button id="tabLoginBtn" class="active" type="button" onclick="showLogin()">Iniciar sesión</button>
@@ -90,22 +123,22 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
       <button class="btn-primary" type="submit">Crear cuenta</button>
     </form>
 
-        <div style="text-align: center; margin-top: 20px;">
-        <a href="admin.html" style="color: #486581; font-size: 13px; text-decoration: none; font-weight: bold;">
-          Acceso Administrador
-        </a>
-      </div>
-    
+    <div style="text-align: center; margin-top: 20px;">
+      <a href="admin.html" style="color: #486581; font-size: 13px; text-decoration: none; font-weight: bold;">
+        Acceso Administrador
+      </a>
+    </div>
   </div>
 </div>
 
 <!-- APLICACIÓN PRINCIPAL -->
 <div id="appRoot" class="app">
-  <div style="background:#fff;padding:15px 28px;border-bottom:1px solid #d9e2ec;display:flex;justify-content:space-between;align-items:center">
+  <div id="topHeaderBar" style="background:#fff;padding:15px 28px;border-bottom:1px solid #d9e2ec;display:flex;justify-content:space-between;align-items:center">
     <div style="font-weight:800;font-size:20px;display:flex;align-items:center;gap:10px"><div class="logo"></div>Contrato Limpio</div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span id="sessionBadge" style="background:#e9fbf1;color:#087c38;padding:5px 10px;border-radius:99px;font-size:12px;font-weight:800">● Sesión</span>
-      <button onclick="handleLogout()" style="background:#d9e2ec;border:0;border-radius:50%;padding:6px 12px;font-weight:800;cursor:pointer">Salir</button>
+      <span id="roleCornerBadge" class="role-corner-badge">ROL</span>
+      <span id="sessionBadge" style="background:#f1f5f9;color:#1e293b;padding:5px 10px;border-radius:99px;font-size:12px;font-weight:800">● Sesión</span>
+      <button onclick="handleLogout()" style="background:#d9e2ec;border:0;border-radius:99px;padding:6px 14px;font-weight:800;cursor:pointer">Salir</button>
     </div>
   </div>
   
@@ -122,9 +155,9 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
     <main style="padding:30px">
       <!-- INICIO -->
       <section id="view-inicio">
-        <div style="background:linear-gradient(115deg,#0b2545,#124e78);padding:28px 30px;border-radius:17px;color:#fff;margin-bottom:29px">
+        <div id="heroBanner" style="background:linear-gradient(115deg,#0b2545,#124e78);padding:28px 30px;border-radius:17px;color:#fff;margin-bottom:29px">
           <h1 style="font-size:26px;margin:0 0 6px">Contratos Modulares, Hitos y Módulo de Disputas</h1>
-          <p style="opacity:0.87;margin:0">Gestión integral de contratos freelance con mediación directa, custodia y descarga de documentos legales.</p>
+          <p style="opacity:0.87;margin:0">Gestión integral de contratos freelance con mediación directa, custodia, adendas de doble aceptación y descarga en PDF.</p>
         </div>
         
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px">
@@ -224,13 +257,13 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
             <textarea id="objeto" style="width:100%;padding:14px;border:1px solid #bcccdc;border-radius:8px;min-height:280px;font-family:monospace;font-size:13px;line-height:1.5;background:#fafbfc"></textarea>
           </div>
 
-          <button onclick="createContract()" style="width:100%;background:#007a7a;color:#fff;border:0;border-radius:99px;padding:12px 15px;font-weight:800;cursor:pointer;margin-top:20px;font-size:16px">Guardar Contrato y Activar Custodia</button>
+          <button id="btnCrearContrato" class="btn-primary" onclick="createContract()" style="margin-top:20px;font-size:16px">Guardar Contrato y Activar Custodia</button>
         </div>
       </section>
 
       <!-- MIS CONTRATOS, HITOS Y DISPUTAS -->
       <section id="view-contratos" style="display:none">
-        <h2 style="margin-bottom:20px">Mis Contratos, Hitos y Disputas</h2>
+        <h2 style="margin-bottom:20px">Mis Contratos, Hitos, Adendas y Disputas</h2>
         <div id="contractList"></div>
       </section>
 
@@ -298,6 +331,46 @@ body{font-family:Inter,sans-serif;background:#f6f9fc;color:#102a43}
   </div>
 </div>
 
+<!-- MODAL PARA SOLICITAR ADENDA (CONTROL DE SCOPE CREEP) -->
+<div id="adendaModal" class="modal-overlay">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+      <h3 style="color:#0b2545;font-size:18px">📝 Solicitar Adenda / Cambio de Alcance</h3>
+      <button onclick="cerrarModalAdenda()" style="background:none;border:0;font-size:18px;cursor:pointer;font-weight:800">✕</button>
+    </div>
+    <p style="font-size:12px;color:#486581;margin-bottom:14px">
+      Para evitar cambios no acordados (<i>scope creep</i>), esta modificación solo entrará en vigor y sumará al contrato cuando <b>ambas partes la acepten</b>.
+    </p>
+
+    <input type="hidden" id="adendaContratoId">
+
+    <div class="auth-field">
+      <label>Nueva parte / Entregable a agregar</label>
+      <input type="text" id="adendaTitulo" placeholder="Ej: Hito Adicional - Pasarela de pagos PSE">
+    </div>
+
+    <div class="auth-field">
+      <label>Descripción y justificación del cambio</label>
+      <textarea id="adendaDescripcion" rows="3" style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc" placeholder="Detalla qué se agrega o modifica respecto al contrato inicial..."></textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="auth-field">
+        <label>Costo adicional (COP)</label>
+        <input type="number" id="adendaMonto" value="0" min="0" placeholder="Ej: 400000">
+      </div>
+      <div class="auth-field">
+        <label>Días adicionales de plazo</label>
+        <input type="number" id="adendaDias" value="0" min="0" placeholder="Ej: 5">
+      </div>
+    </div>
+
+    <button onclick="guardarAdenda()" class="btn-primary" style="margin-top:10px;background:#087f80">
+      ✍️ Firmar y Enviar Propuesta de Adenda
+    </button>
+  </div>
+</div>
+
 <script>
 var SUPABASE_URL = 'https://gftdhhvsjpojxkdyuvpl.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmdGRoaHZzanBvanhrZHl1dnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNDQ5NjQsImV4cCI6MjEwNDYyMDk2NH0.Y5T1C7yJGOWP7Je55qOPY_3oOyvtOLFnGRWZN3nm0wA';
@@ -329,14 +402,16 @@ var PLANTILLAS_HITOS = {
 var listadoHitos = [];
 
 async function syncPerfilUsuario(user) {
-  if (!user) return;
+  if (!user) return 'Freelancer';
   var { data: perfilExistente } = await supabase
     .from('perfiles_usuario')
     .select('id, rol')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (perfilExistente && perfilExistente.rol) return;
+  if (perfilExistente && perfilExistente.rol) {
+    return perfilExistente.rol;
+  }
 
   var nombre = (user.user_metadata && user.user_metadata.nombre) ? user.user_metadata.nombre : user.email.split('@')[0];
   var rol = (user.user_metadata && user.user_metadata.rol) ? user.user_metadata.rol : 'Freelancer';
@@ -347,6 +422,24 @@ async function syncPerfilUsuario(user) {
     nombre: nombre,
     rol: rol
   });
+
+  return rol;
+}
+
+function aplicarTemaPorRol(rol) {
+  var rolTexto = (rol || '').toLowerCase();
+  var esCliente = rolTexto.includes('cliente') || rolTexto.includes('contratante');
+  var badge = $('roleCornerBadge');
+
+  document.body.classList.remove('theme-freelancer', 'theme-cliente');
+
+  if (esCliente) {
+    document.body.classList.add('theme-cliente');
+    if (badge) badge.textContent = '🏢 CLIENTE / CONTRATANTE';
+  } else {
+    document.body.classList.add('theme-freelancer');
+    if (badge) badge.textContent = '🛠️ FREELANCER / CONTRATISTA';
+  }
 }
 
 function cargarHitosSegunModulo(moduloKey) {
@@ -401,8 +494,8 @@ function eliminarHito(index) {
 function obtenerClausulas(modulo, titulo, valorTotal) {
   var valFormatted = '$' + Number(valorTotal || 0).toLocaleString('es-CO') + ' COP';
   var t = titulo || '[Nombre del Proyecto]';
-  var dias = $('diasNegociacion') ?$('diasNegociacion').value : '10';
-  var mecanismo = $('mecanismoEscalacion') ?$('mecanismoEscalacion').value : 'Conciliación';
+  var dias = $('diasNegociacion') ? $('diasNegociacion').value : '10';
+  var mecanismo = $('mecanismoEscalacion') ? $('mecanismoEscalacion').value : 'Conciliación';
 
   var clausulasEspecificas = '';
 
@@ -437,8 +530,8 @@ Toda la propiedad intelectual, derechos patrimoniales y archivos finales derivad
 QUINTA – CONFIDENCIALIDAD:
 Ambas partes mantendrán estricta reserva sobre la información técnica, comercial o privada intercambiada durante la ejecución de este acuerdo.
 
-SEXTA – CUSTODIA DE FONDOS (ESCROW):
-Los pagos serán depositados bajo custodia en la plataforma y se liberarán progresivamente al CONTRATISTA a medida que el CONTRATANTE apruebe la entrega de cada hito.`;
+SEXTA – CUSTODIA DE FONDOS (ESCROW) Y ADENDAS:
+Los pagos serán depositados bajo custodia en la plataforma y se liberarán progresivamente al CONTRATISTA a medida que el CONTRATANTE apruebe la entrega de cada hito. Cualquier modificación de alcance o valor requerirá una Adenda aprobada por ambas partes.`;
 
   return clausulasEspecificas + clausulaDisputas + clausulasRestantes;
 }
@@ -462,11 +555,19 @@ function cargarModulo(moduloKey) {
 }
 
 function showLogin() {
-  $('tabLoginBtn').classList.add('active'); $('tabRegisterBtn').classList.remove('active');$('loginForm').classList.add('active'); $('registerForm').classList.remove('active');$('authError').style.display = 'none';
+  $('tabLoginBtn').classList.add('active');
+  $('tabRegisterBtn').classList.remove('active');
+  $('loginForm').classList.add('active');
+  $('registerForm').classList.remove('active');
+  $('authError').style.display = 'none';
 }
 
 function showRegister() {
-  $('tabRegisterBtn').classList.add('active'); $('tabLoginBtn').classList.remove('active');$('registerForm').classList.add('active'); $('loginForm').classList.remove('active');$('authError').style.display = 'none';
+  $('tabRegisterBtn').classList.add('active');
+  $('tabLoginBtn').classList.remove('active');
+  $('registerForm').classList.add('active');
+  $('loginForm').classList.remove('active');
+  $('authError').style.display = 'none';
 }
 
 function showView(view) {
@@ -479,7 +580,9 @@ function showView(view) {
   if (view === 'contratos') loadContracts();
 }
 
-$('loginForm').addEventListener('submit', async function(e) {   e.preventDefault();$('authError').style.display = 'none';
+$('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  $('authError').style.display = 'none';
   try {
     var result = await supabase.auth.signInWithPassword({
       email: $('loginCorreo').value.trim(),
@@ -494,10 +597,9 @@ $('loginForm').addEventListener('submit', async function(e) {   e.preventDefault
   }
 });
 
-  
 function validarCampoNombre(input) {
   var valor = input.value;
-  if (valor === "6") return; 
+  if (valor === "6") return;
   
   input.value = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, function(char) {
     return char === '6' ? '6' : '';
@@ -518,7 +620,6 @@ $('registerForm').addEventListener('submit', async function(e) {
   var password = $('regPassword').value;
   var rol = $('regRol').value;
 
-  // Validar regla de nombre (solo letras o el número 6)
   var regexNombre = /^([a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+|6)$/;
   if (!regexNombre.test(nombre)) {
     $('authError').textContent = 'El nombre solo puede contener letras o únicamente el número 6.';
@@ -526,7 +627,6 @@ $('registerForm').addEventListener('submit', async function(e) {
     return;
   }
 
-  // Validar correo
   if (!esCorreoValido(correo)) {
     $('authError').textContent = 'Por favor ingresa un correo electrónico válido (ejemplo: usuario@dominio.com).';
     $('authError').style.display = 'block';
@@ -571,10 +671,13 @@ $('registerForm').addEventListener('submit', async function(e) {
 
 async function handleLogout() {
   await supabase.auth.signOut();
-  $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
+  document.body.classList.remove('theme-freelancer', 'theme-cliente');
+  $('appRoot').classList.remove('active');
+  $('authScreen').style.display = 'flex';
 }
 
 async function createContract() {
+  var btnGuardar = $('btnCrearContrato');
   var titulo = $('titulo').value.trim();
   var objeto = $('objeto').value.trim();
   var correoContraparte = $('correo_contraparte').value.trim().toLowerCase();
@@ -584,6 +687,11 @@ async function createContract() {
   if (!titulo || !objeto || valorTotal <= 0 || !correoContraparte) { 
     alert('Por favor completa el título, el correo de la otra parte y los hitos.'); 
     return; 
+  }
+
+  if (btnGuardar) {
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = 'Guardando contrato...';
   }
 
   try {
@@ -651,11 +759,17 @@ async function createContract() {
     }]);
 
     alert('✅ Contrato guardado y vinculado a ambas cuentas exitosamente.');
-    $('titulo').value = '';$('correo_contraparte').value = '';
+    $('titulo').value = '';
+    $('correo_contraparte').value = '';
     showView('contratos');
 
   } catch (err) {
     alert('Error al guardar: ' + err.message);
+  } finally {
+    if (btnGuardar) {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = 'Guardar Contrato y Activar Custodia';
+    }
   }
 }
 
@@ -709,6 +823,9 @@ async function loadContracts() {
     var disputasRes = await supabase.from('disputas').select('*').in('contrato_id', contratoIds);
     var todasLasDisputas = disputasRes.data || [];
 
+    var adendasRes = await supabase.from('adendas_contrato').select('*').in('contrato_id', contratoIds);
+    var todasLasAdendas = adendasRes.data || [];
+
     var disputaIds = todasLasDisputas.map(d => d.id).filter(Boolean);
     var todasLasEvidencias = [];
     if (disputaIds.length > 0) {
@@ -723,6 +840,7 @@ async function loadContracts() {
       var hitosDelContrato = todosLosHitos.filter(h => h.contrato_id === c.id);
       var disputasDelContrato = todasLasDisputas.filter(d => d.contrato_id === c.id);
       var disputaActiva = disputasDelContrato.find(d => d.estado === 'ABIERTA' || d.estado === 'EN_NEGOCIACION');
+      var adendasDelContrato = todasLasAdendas.filter(a => a.contrato_id === c.id);
 
       var renderHitosHTML = hitosDelContrato.map(function(h) {
         var esPagado = h.estado === 'Liberado';
@@ -747,6 +865,36 @@ async function loadContracts() {
               <div style="font-size:11px;color:#486581">$${Number(h.monto).toLocaleString('es-CO')} COP</div>
             </div>
             <div>${botonAccion}</div>
+          </div>`;
+      }).join('');
+
+      var renderAdendasHTML = adendasDelContrato.map(function(a) {
+        var soySolicitante = a.solicitante_id === user.id;
+        var badgeColor = a.estado === 'APROBADA' ? 'background:#d1fae5;color:#065f46' :
+                         a.estado === 'RECHAZADA' ? 'background:#fee2e2;color:#991b1b' :
+                         'background:#e0f2fe;color:#0369a1';
+
+        var accionesAdenda = '';
+        if (a.estado === 'PENDIENTE' && !soySolicitante) {
+          accionesAdenda = `
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button onclick="responderAdenda('${a.id}', 'aceptar')" style="background:#16a34a;color:#fff;border:0;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">✅ Aceptar Adenda y Actualizar Contrato</button>
+              <button onclick="responderAdenda('${a.id}', 'rechazar')" style="background:#dc2626;color:#fff;border:0;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">✕ Rechazar</button>
+            </div>`;
+        } else if (a.estado === 'PENDIENTE' && soySolicitante) {
+          accionesAdenda = `<div style="margin-top:6px;font-size:12px;color:#0369a1;font-weight:700">⏳ Firmada por ti. Esperando aceptación de la contraparte...</div>`;
+        }
+
+        return `
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-top:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="padding:3px 8px;border-radius:5px;font-size:11px;font-weight:800;${badgeColor}">ADENDA ${a.estado}</span>
+              <span style="font-size:11px;color:#475569">Firmas: ${a.aceptado_por_solicitante ? '✔ Solicitante' : '○ Solicitante'} | ${a.aceptado_por_contraparte ? '✔ Contraparte' : '⏳ Contraparte'}</span>
+            </div>
+            <p style="font-size:13px;font-weight:700;color:#0b2545;margin:4px 0">${a.titulo_hito}</p>
+            <p style="font-size:12px;color:#334155">${a.descripcion_cambio}</p>
+            <p style="font-size:12px;color:#087f80;margin-top:4px"><b>Ajuste de costo:</b> +$${Number(a.monto_adicional || 0).toLocaleString('es-CO')} COP | <b>Plazo extra:</b> ${a.dias_extra || 0} días</p>
+            ${accionesAdenda}
           </div>`;
       }).join('');
 
@@ -789,7 +937,7 @@ async function loadContracts() {
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <h3 style="margin:0;font-size:16px;">${c.titulo}</h3>
             <div style="display:flex;align-items:center;gap:8px">
-              <button onclick="descargarContrato('${c.id}')" class="btn-download">📥 Descargar Contrato (.DOC)</button>
+              <button onclick="descargarContrato('${c.id}')" class="btn-download">📥 Descargar PDF</button>
               <span style="background:#e9fbf1;color:#087c38;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;">Total: $${Number(c.valor || 0).toLocaleString('es-CO')} COP</span>
             </div>
           </div>
@@ -800,6 +948,14 @@ async function loadContracts() {
           <div style="background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;margin-top:10px">
             <h4 style="font-size:13px;margin-bottom:8px;color:#334e68">Entregables e Hitos de Pago:</h4>
             ${renderHitosHTML || '<p style="font-size:12px;color:#999">No se detallaron hitos.</p>'}
+          </div>
+
+          <div style="margin-top:12px;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <h4 style="font-size:13px;color:#0b2545">📝 Control de Alcance y Adendas (Doble Aceptación):</h4>
+              ${!disputaActiva ? `<button onclick="abrirModalAdenda('${c.id}')" style="background:#0284c7;color:#fff;border:0;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">＋ Solicitar Adenda</button>` : ''}
+            </div>
+            ${renderAdendasHTML || '<p style="font-size:12px;color:#64748b;margin-top:4px">Sin adendas modificatorias. El alcance inicial está bloqueado contra cambios unilaterales.</p>'}
           </div>
 
           <div style="margin-top:12px">
@@ -817,7 +973,7 @@ async function loadContracts() {
 }
 
 // ==============================================================================
-// FUNCIÓN PARA DESCARGAR EL CONTRATO EN FORMATO DOCUMENTO COMPLETO (.DOC / HTML)
+// FUNCIÓN PARA DESCARGAR EL CONTRATO EN FORMATO PDF NATIVO
 // ==============================================================================
 async function descargarContrato(contratoId) {
   try {
@@ -837,99 +993,84 @@ async function descargarContrato(contratoId) {
     var partesHTML = partes.map(p => {
       var name = p.perfiles_usuario ? p.perfiles_usuario.nombre : 'Usuario';
       var mail = p.perfiles_usuario ? p.perfiles_usuario.correo : 'N/A';
-      return `<li><b>${p.rol_en_contrato}:</b> ${name} (${mail})</li>`;
+      return `<li style="margin-bottom:4px;"><b>${p.rol_en_contrato}:</b> ${name} (${mail})</li>`;
     }).join('');
 
     var hitosHTML = hitos.map((h, index) => {
       return `<tr>
-        <td style="padding:8px;border:1px solid #ccc;">${index + 1}</td>
-        <td style="padding:8px;border:1px solid #ccc;">${h.titulo}</td>
-        <td style="padding:8px;border:1px solid #ccc;">$${Number(h.monto).toLocaleString('es-CO')} COP</td>
-        <td style="padding:8px;border:1px solid #ccc;">${h.estado}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;">${index + 1}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;">${h.titulo}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;">$${Number(h.monto).toLocaleString('es-CO')} COP</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;">${h.estado}</td>
       </tr>`;
     }).join('');
 
     var disputasHTML = disputas.map(d => {
-      return `<div style="background:#fff0f0;border:1px solid #ffcccc;padding:10px;margin-top:10px;border-radius:5px;">
-        <p><b>Estado de Disputa:</b> ${d.estado}</p>
-        <p><b>Motivo:</b> ${d.motivo}</p>
+      return `<div style="background:#fff5f5;border:1px solid #feb2b2;padding:10px;margin-top:8px;border-radius:6px;font-size:12px;">
+        <p><b>Estado de Disputa:</b> ${d.estado} | <b>Motivo:</b> ${d.motivo}</p>
         <p><b>Descripción:</b> ${d.descripcion}</p>
         <p><b>Monto Reclamado:</b> $${Number(d.monto_reclamado || 0).toLocaleString('es-CO')} COP</p>
-        <p><b>Propuesta:</b> ${d.propuesta_solucion || 'N/A'}</p>
       </div>`;
     }).join('');
 
-    var docHTML = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head>
-        <meta charset='utf-8'>
-        <title>${c.titulo}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 30px; color: #102a43; line-height: 1.6; }
-          h1 { color: #0b2545; border-bottom: 2px solid #007a7a; padding-bottom: 8px; }
-          h2 { color: #124e78; margin-top: 20px; }
-          .header-info { background: #f0f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-          th { background: #0b2545; color: #ffffff; padding: 8px; border: 1px solid #ccc; text-align: left; }
-          .clausula { white-space: pre-wrap; background: #fafbfc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 12px; }
-          .footer { margin-top: 40px; font-size: 11px; color: #486581; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; }
-        </style>
-      </head>
-      <body>
-        <h1>CONTRATO LIMPIO - ACUERDO DE SERVICIOS</h1>
+    var pdfHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #102a43; line-height: 1.5; font-size: 13px;">
+        <h1 style="color: #0b2545; border-bottom: 2px solid #007a7a; padding-bottom: 8px; font-size: 20px; margin-bottom: 14px;">
+          CONTRATO LIMPIO - ACUERDO DE SERVICIOS
+        </h1>
         
-        <div class="header-info">
-          <p><b>Título del Proyecto:</b> ${c.titulo}</p>
-          <p><b>Tipo de Servicio:</b> ${c.tipo}</p>
-          <p><b>Valor Total del Contrato:</b> $${Number(c.valor || 0).toLocaleString('es-CO')} COP</p>
-          <p><b>Forma de Pago:</b> ${c.forma_pago}</p>
-          <p><b>Estado Actual:</b> ${c.estado}</p>
-          <p><b>Fecha de Registro:</b> ${new Date(c.created_at).toLocaleDateString('es-CO')}</p>
+        <div style="background: #f0f4f8; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+          <p style="margin:3px 0;"><b>Título del Proyecto:</b> ${c.titulo}</p>
+          <p style="margin:3px 0;"><b>Tipo de Servicio:</b> ${c.tipo}</p>
+          <p style="margin:3px 0;"><b>Valor Total del Contrato:</b> $${Number(c.valor || 0).toLocaleString('es-CO')} COP</p>
+          <p style="margin:3px 0;"><b>Forma de Pago:</b> ${c.forma_pago} | <b>Estado:</b> ${c.estado}</p>
+          <p style="margin:3px 0;"><b>Fecha de Registro:</b> ${new Date(c.created_at).toLocaleDateString('es-CO')}</p>
         </div>
 
-        <h2>PARTES CONTRATANTES</h2>
-        <ul>${partesHTML || '<li>No hay partes registradas</li>'}</ul>
+        <h2 style="color: #124e78; font-size: 15px; margin: 14px 0 6px;">PARTES CONTRATANTES</h2>
+        <ul style="padding-left: 20px; margin-bottom: 14px;">${partesHTML || '<li>No hay partes registradas</li>'}</ul>
 
-        <h2>CLÁUSULAS DEL CONTRATO</h2>
-        <div class="clausula">${c.objeto}</div>
+        <h2 style="color: #124e78; font-size: 15px; margin: 14px 0 6px;">CLÁUSULAS Y ADENDAS DEL CONTRATO</h2>
+        <div style="white-space: pre-wrap; background: #fafbfc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 14px;">${c.objeto}</div>
 
-        <h2>ENTREGABLES E HITOS DE PAGO</h2>
-        <table>
+        <h2 style="color: #124e78; font-size: 15px; margin: 14px 0 6px;">ENTREGABLES E HITOS DE PAGO</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px;">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Entregable / Descripción</th>
-              <th>Monto (COP)</th>
-              <th>Estado</th>
+              <th style="background: #0b2545; color: #ffffff; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">#</th>
+              <th style="background: #0b2545; color: #ffffff; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Entregable / Descripción</th>
+              <th style="background: #0b2545; color: #ffffff; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Monto (COP)</th>
+              <th style="background: #0b2545; color: #ffffff; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Estado</th>
             </tr>
           </thead>
           <tbody>
-            ${hitosHTML || '<tr><td colspan="4">Sin hitos registrados</td></tr>'}
+            ${hitosHTML || '<tr><td colspan="4" style="padding:8px;border:1px solid #cbd5e1;">Sin hitos registrados</td></tr>'}
           </tbody>
         </table>
 
-        ${disputas.length > 0 ? `<h2>HISTORIAL DE DISPUTAS Y CONTROVERSIAS</h2>${disputasHTML}` : ''}
+        ${disputas.length > 0 ? `<h2 style="color: #124e78; font-size: 15px; margin: 14px 0 6px;">HISTORIAL DE DISPUTAS</h2>${disputasHTML}` : ''}
 
-        <div class="footer">
-          Documento generado automáticamente a través de la plataforma <b>Contrato Limpio</b>.<br>
-          Validez y resguardo digital en custodia (Escrow).
+        <div style="margin-top: 28px; font-size: 11px; color: #486581; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 10px;">
+          Documento PDF generado automáticamente por <b>Contrato Limpio</b>.<br>
+          Resguardo digital con custodia Escrow y control de adendas de doble aceptación.
         </div>
-      </body>
-      </html>
+      </div>
     `;
 
-    var blob = new Blob(['\ufeff', docHTML], { type: 'application/msword' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = `Contrato_${c.titulo.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${c.id}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    var nombreArchivo = `Contrato_${c.titulo.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${c.id}.pdf`;
+
+    var opcionesPDF = {
+      margin: 10,
+      filename: nombreArchivo,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    await html2pdf().set(opcionesPDF).from(pdfHTML).save();
 
   } catch (err) {
-    alert('Error al generar la descarga del contrato: ' + err.message);
+    alert('Error al generar el PDF del contrato: ' + err.message);
   }
 }
 
@@ -1089,16 +1230,141 @@ function calc() {
   $('base').textContent = '$' + base.toLocaleString('es-CO') + ' COP';
 }
 
+function abrirModalAdenda(contratoId) {
+  $('adendaContratoId').value = contratoId;
+  $('adendaTitulo').value = '';
+  $('adendaDescripcion').value = '';
+  $('adendaMonto').value = '0';
+  $('adendaDias').value = '0';
+  $('adendaModal').style.display = 'flex';
+}
+
+function cerrarModalAdenda() {
+  $('adendaModal').style.display = 'none';
+}
+
+async function guardarAdenda() {
+  var contratoId = parseInt($('adendaContratoId').value, 10);
+  var tituloHito = $('adendaTitulo').value.trim();
+  var descripcion = $('adendaDescripcion').value.trim();
+  var montoAdicional = parseFloat($('adendaMonto').value) || 0;
+  var diasExtra = parseInt($('adendaDias').value, 10) || 0;
+
+  if (!contratoId || !tituloHito || !descripcion) {
+    alert('Completa el título del nuevo entregable y la descripción del cambio.');
+    return;
+  }
+
+  try {
+    var userResponse = await supabase.auth.getUser();
+    var user = userResponse.data.user;
+    if (!user) throw new Error('Sesión no válida.');
+
+    var res = await supabase.from('adendas_contrato').insert([{
+      contrato_id: contratoId,
+      solicitante_id: user.id,
+      titulo_hito: tituloHito,
+      descripcion_cambio: descripcion,
+      monto_adicional: montoAdicional,
+      dias_extra: diasExtra,
+      estado: 'PENDIENTE',
+      aceptado_por_solicitante: true,
+      aceptado_por_contraparte: false
+    }]);
+
+    if (res.error) throw res.error;
+
+    alert('📝 Adenda enviada. La modificación aplicará cuando la otra parte la acepte.');
+    cerrarModalAdenda();
+    loadContracts();
+  } catch (err) {
+    alert('Error al solicitar adenda: ' + err.message);
+  }
+}
+
+async function responderAdenda(adendaId, decision) {
+  var msgConfirm = decision === 'aceptar'
+    ? '¿Confirmas que aceptas esta adenda? Se sumará el costo al contrato, se agregará el nuevo hito y se actualizará la custodia.'
+    : '¿Deseas rechazar esta propuesta de adenda? El contrato original permanecerá intacto.';
+
+  if (!confirm(msgConfirm)) return;
+
+  try {
+    var adendaRes = await supabase.from('adendas_contrato').select('*').eq('id', adendaId).single();
+    if (adendaRes.error) throw adendaRes.error;
+    var adenda = adendaRes.data;
+
+    if (decision === 'rechazar') {
+      var rejRes = await supabase.from('adendas_contrato')
+        .update({ estado: 'RECHAZADA', aceptado_por_contraparte: false })
+        .eq('id', adendaId);
+      if (rejRes.error) throw rejRes.error;
+      alert('❌ Adenda rechazada. El alcance original se mantiene.');
+      loadContracts();
+      return;
+    }
+
+    var upAdenda = await supabase.from('adendas_contrato')
+      .update({ estado: 'APROBADA', aceptado_por_contraparte: true })
+      .eq('id', adendaId);
+    if (upAdenda.error) throw upAdenda.error;
+
+    var montoExtra = Number(adenda.monto_adicional) || 0;
+    var diasExtra = Number(adenda.dias_extra) || 0;
+
+    var insHito = await supabase.from('hitos_contrato').insert([{
+      contrato_id: adenda.contrato_id,
+      titulo: `[Adenda #${adenda.id}] ${adenda.titulo_hito}`,
+      monto: montoExtra,
+      estado: 'Pendiente'
+    }]);
+    if (insHito.error) throw insHito.error;
+
+    var cRes = await supabase.from('contratos').select('valor, objeto').eq('id', adenda.contrato_id).single();
+    if (cRes.data) {
+      var nuevoValor = (Number(cRes.data.valor) || 0) + montoExtra;
+      var textoAdenda = `\n\n--- ADENDA MODIFICATORIA #${adenda.id} (DOBLE ACEPTACIÓN) ---\n` +
+        `Entregable añadido: ${adenda.titulo_hito}\n` +
+        `Alcance: ${adenda.descripcion_cambio}\n` +
+        `Incremento: $${montoExtra.toLocaleString('es-CO')} COP | Plazo extra: ${diasExtra} días.`;
+
+      await supabase.from('contratos').update({
+        valor: nuevoValor,
+        objeto: (cRes.data.objeto || '') + textoAdenda,
+        estado: 'Activo (Fondeado)'
+      }).eq('id', adenda.contrato_id);
+    }
+
+    if (montoExtra > 0) {
+      await supabase.from('custodia_escrow').insert([{
+        contrato_id: adenda.contrato_id,
+        monto: montoExtra,
+        estado: 'En Custodia',
+        referencia_pago: `TXN-${adenda.contrato_id}-ADN-${adenda.id}`
+      }]);
+    }
+
+    alert('✅ ¡Adenda aceptada por ambas partes! El contrato, los hitos y el costo total fueron actualizados.');
+    loadContracts();
+  } catch (err) {
+    alert('Error al procesar la adenda: ' + err.message);
+  }
+}
+
 async function checkSession() {
   var sessionResponse = await supabase.auth.getSession();
   if (sessionResponse.data && sessionResponse.data.session) {
     var user = sessionResponse.data.session.user;
-    await syncPerfilUsuario(user);
+    var rolActual = await syncPerfilUsuario(user);
+    aplicarTemaPorRol(rolActual);
     $('sessionBadge').textContent = '● ' + (user.user_metadata.nombre || user.email);
-    $('authScreen').style.display = 'none';$('appRoot').classList.add('active');
+    $('authScreen').style.display = 'none';
+    $('appRoot').classList.add('active');
     showView('inicio');
   } else {
-    $('appRoot').classList.remove('active');$('authScreen').style.display = 'flex';
+    document.body.classList.remove('theme-freelancer', 'theme-cliente');
+    $('appRoot').classList.remove('active');
+    $('authScreen').style.display = 'flex';
   }
 }
 

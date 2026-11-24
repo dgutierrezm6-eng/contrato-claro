@@ -149,6 +149,7 @@ body.theme-cliente #topHeaderBar{border-bottom:3px solid #1e40af !important}
         <button onclick="showView('crear')" style="background:transparent;border:0;padding:11px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:700;color:#486581">＋ Editor Modular</button>
         <button onclick="showView('contratos')" style="background:transparent;border:0;padding:11px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:700;color:#486581">▣ Mis Contratos</button>
         <button onclick="showView('calculadora')" style="background:transparent;border:0;padding:11px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:700;color:#486581">▤ Calculadora</button>
+        <button onclick="showView('perfil')" style="background:transparent;border:0;padding:11px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:700;color:#486581">⚙ Mi Perfil / Seguridad</button>
       </nav>
     </aside>
 
@@ -275,6 +276,63 @@ body.theme-cliente #topHeaderBar{border-bottom:3px solid #1e40af !important}
           <p style="margin-bottom:12px">Tarifa por hora (COP): <input type="number" id="tarifa" value="50000" oninput="calc()" style="padding:8px;border-radius:6px;border:1px solid #ccc;width:130px"></p>
           <hr style="margin:15px 0;border:0;border-top:1px solid #eee">
           <p style="font-size:16px">Valor sugerido del contrato: <b id="base" style="color:#007a7a">$2,000,000 COP</b></p>
+        </div>
+      </section>
+
+      <!-- MI PERFIL Y SEGURIDAD -->
+      <section id="view-perfil" style="display:none">
+        <h2 style="margin-bottom:20px">Mi Perfil y Seguridad de la Cuenta</h2>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:20px;max-width:950px">
+          
+          <!-- Tarjeta 1: Actualizar Datos -->
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
+            <h3 style="font-size:16px;color:#0b2545;margin-bottom:6px">👤 Actualizar Datos Personales</h3>
+            <p style="font-size:12px;color:#486581;margin-bottom:16px">Modifica tu nombre visible o tu rol activo en la plataforma.</p>
+
+            <div class="auth-field">
+              <label for="perfilCorreo">Correo electrónico (no editable)</label>
+              <input id="perfilCorreo" type="email" disabled style="background:#f1f5f9;color:#64748b;cursor:not-allowed">
+            </div>
+
+            <div class="auth-field">
+              <label for="perfilNombre">Nombre completo</label>
+              <input id="perfilNombre" type="text" placeholder="Tu nombre completo" oninput="validarCampoNombre(this)">
+            </div>
+
+            <div class="auth-field">
+              <label for="perfilRol">Rol en la plataforma</label>
+              <select id="perfilRol">
+                <option value="Freelancer">Freelancer / Contratista</option>
+                <option value="Cliente o Contratante">Cliente / Contratante</option>
+              </select>
+            </div>
+
+            <button id="btnGuardarPerfil" onclick="actualizarDatosPerfil()" class="btn-primary" style="margin-top:8px">
+              💾 Guardar Datos
+            </button>
+          </div>
+
+          <!-- Tarjeta 2: Cambiar Contraseña -->
+          <div style="background:#fff;border:1px solid #d9e2ec;border-radius:14px;padding:24px">
+            <h3 style="font-size:16px;color:#0b2545;margin-bottom:6px">🔒 Cambiar Contraseña</h3>
+            <p style="font-size:12px;color:#486581;margin-bottom:16px">Actualiza tu clave de acceso. Debe tener al menos 6 caracteres.</p>
+
+            <div class="auth-field">
+              <label for="nuevaPassword">Nueva contraseña</label>
+              <input id="nuevaPassword" type="password" minlength="6" placeholder="Mínimo 6 caracteres">
+            </div>
+
+            <div class="auth-field">
+              <label for="confirmarPassword">Confirmar nueva contraseña</label>
+              <input id="confirmarPassword" type="password" minlength="6" placeholder="Repite la nueva contraseña">
+            </div>
+
+            <button id="btnCambiarPass" onclick="cambiarPasswordUsuario()" class="btn-primary" style="margin-top:8px">
+              🔑 Actualizar Contraseña
+            </button>
+          </div>
+
         </div>
       </section>
     </main>
@@ -571,13 +629,14 @@ function showRegister() {
 }
 
 function showView(view) {
-  ['inicio', 'crear', 'contratos', 'calculadora'].forEach(function(v) {
+  ['inicio', 'crear', 'contratos', 'calculadora', 'perfil'].forEach(function(v) {
     $('view-' + v).style.display = v === view ? 'block' : 'none';
   });
   if (view === 'crear' && listadoHitos.length === 0) {
     cargarHitosSegunModulo($('moduloSelect').value);
   }
   if (view === 'contratos') loadContracts();
+  if (view === 'perfil') cargarDatosPerfil();
 }
 
 $('loginForm').addEventListener('submit', async function(e) {
@@ -1348,6 +1407,110 @@ async function responderAdenda(adendaId, decision) {
     loadContracts();
   } catch (err) {
     alert('Error al procesar la adenda: ' + err.message);
+  }
+}
+
+async function cargarDatosPerfil() {
+  try {
+    var userResponse = await supabase.auth.getUser();
+    var user = userResponse.data.user;
+    if (!user) return;
+
+    $('perfilCorreo').value = user.email || '';
+
+    var { data: perfil } = await supabase
+      .from('perfiles_usuario')
+      .select('nombre, rol')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    var nombreActual = (perfil && perfil.nombre) || (user.user_metadata && user.user_metadata.nombre) || '';
+    var rolActual = (perfil && perfil.rol) || (user.user_metadata && user.user_metadata.rol) || 'Freelancer';
+
+    $('perfilNombre').value = nombreActual;
+    $('perfilRol').value = rolActual.toLowerCase().includes('cliente') ? 'Cliente o Contratante' : 'Freelancer';
+  } catch (err) {
+    console.error('Error al cargar perfil:', err);
+  }
+}
+
+async function actualizarDatosPerfil() {
+  var btn = $('btnGuardarPerfil');
+  var nombre = $('perfilNombre').value.trim();
+  var rol = $('perfilRol').value;
+
+  var regexNombre = /^([a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+|6)$/;
+  if (!nombre || !regexNombre.test(nombre)) {
+    alert('Por favor ingresa un nombre válido (solo letras o el número 6).');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  try {
+    var userResponse = await supabase.auth.getUser();
+    var user = userResponse.data.user;
+    if (!user) throw new Error('Sesión no válida.');
+
+    var authUpdate = await supabase.auth.updateUser({
+      data: { nombre: nombre, rol: rol }
+    });
+    if (authUpdate.error) throw authUpdate.error;
+
+    var dbUpdate = await supabase.from('perfiles_usuario').upsert({
+      id: user.id,
+      correo: user.email.toLowerCase(),
+      nombre: nombre,
+      rol: rol
+    });
+    if (dbUpdate.error) throw dbUpdate.error;
+
+    $('sessionBadge').textContent = '● ' + nombre;
+    aplicarTemaPorRol(rol);
+
+    alert('✅ Datos actualizados correctamente.');
+  } catch (err) {
+    alert('Error al actualizar perfil: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Guardar Datos';
+  }
+}
+
+async function cambiarPasswordUsuario() {
+  var btn = $('btnCambiarPass');
+  var nuevaPass = $('nuevaPassword').value;
+  var confirmarPass = $('confirmarPassword').value;
+
+  if (nuevaPass.length < 6) {
+    alert('La nueva contraseña debe tener al menos 6 caracteres.');
+    return;
+  }
+
+  if (nuevaPass !== confirmarPass) {
+    alert('Las contraseñas no coinciden. Verifica e intenta de nuevo.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Actualizando...';
+
+  try {
+    var res = await supabase.auth.updateUser({
+      password: nuevaPass
+    });
+
+    if (res.error) throw res.error;
+
+    $('nuevaPassword').value = '';
+    $('confirmarPassword').value = '';
+    alert('🔑 ¡Contraseña actualizada exitosamente!');
+  } catch (err) {
+    alert('Error al cambiar la contraseña: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔑 Actualizar Contraseña';
   }
 }
 
